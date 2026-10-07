@@ -5,3 +5,5 @@ out/*/still_*.png
 out/*/cmp*.png
 out/*/envelope.json
 out/*/video.mp4
+out/*/chk*.png
+out/*/video_share.mp4
