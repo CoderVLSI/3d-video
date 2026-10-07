@@ -4,6 +4,7 @@ import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
 import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js';
 import { OutputPass } from 'three/addons/postprocessing/OutputPass.js';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+import * as SkeletonUtils from 'three/addons/utils/SkeletonUtils.js';
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
 import { rng, fbm, vnoise, mix, makeTexture, smooth, clamp01, lerp, glowTexture, skyDome } from '/src/common.js';
 
@@ -26,7 +27,8 @@ composer.addPass(new OutputPass());
 const glowTex = glowTexture();
 scene.environment = new THREE.PMREMGenerator(renderer).fromScene(new RoomEnvironment(), 0.04).texture;
 // the hero: Vamana, decimated from the release GLB with tools/blender/optimize_model.py
-const vamanaGLB = (await new GLTFLoader().loadAsync('/assets/models/vamana.glb')).scene;
+const loadGLB = async (name) => (await new GLTFLoader().loadAsync(`/assets/models/${name}_rigged.glb`)).scene;
+const [vamanaGLB, baliGLB, guruGLB] = await Promise.all([loadGLB('vamana'), loadGLB('bali'), loadGLB('shukracharya')]);
 
 function glowSprite(parent, color, scale, opacity, at = [0, 0, 0]) {
   const s = new THREE.Sprite(new THREE.SpriteMaterial({ map: glowTex, color, transparent: true, opacity, blending: THREE.AdditiveBlending, depthWrite: false }));
@@ -94,21 +96,47 @@ function makeFigure({ skin = 0xd9a273, cloth = 0xff8a1e, trim = 0xffd34d, hair =
   const glow = (k) => mats.forEach((m) => { m.emissiveIntensity = k * (m.metalness > 0.3 ? 0.9 : 0.45); });
   return { root, legL, legR, armL, armR, head, umb, reset, glow, mouth };
 }
-// Wraps the (rigless) Vamana mesh in the same interface the procedural figures expose, so pose code can drive either.
-// Limb handles are inert dummies; motion is whole-body through `body`.
-function makeModelActor() {
+// Bone control for the rigged GLBs (tools/blender/rig_character.py). Rotations are given about the character's own axes
+// ('x' pitch: + leans/kicks forward for the spine, - swings a hanging limb forward; 'y' yaw: + turns to the character's left;
+// 'z' roll: + abducts the left arm outward) and composed down the skeleton, so pose code reads the same for every character.
+const AXES = { x: new THREE.Vector3(1, 0, 0), y: new THREE.Vector3(0, 1, 0), z: new THREE.Vector3(0, 0, 1) };
+class BoneRig {
+  constructor(model) {
+    this.bones = new Map(); this.order = [];
+    const visit = (o) => { if (o.isBone) { this.bones.set(o.name, o); this.order.push(o); } o.children.forEach(visit); };
+    visit(model);
+    this.rest = new Map(this.order.map((b) => [b, b.quaternion.clone()]));
+    this.delta = new Map();
+  }
+  reset() { this.delta.clear(); }
+  rot(name, axis, deg) {
+    const b = this.bones.get(name); if (!b || !deg) return;
+    const q = new THREE.Quaternion().setFromAxisAngle(AXES[axis], (deg * Math.PI) / 180);
+    this.delta.set(b, q.multiply(this.delta.get(b) ?? new THREE.Quaternion()));
+  }
+  apply() { // local = inv(P) * delta * P * rest, with P the parent's current accumulated rotation
+    const P = new Map(), tmp = new THREE.Quaternion();
+    for (const b of this.order) {
+      const pq = (b.parent && P.get(b.parent)) || new THREE.Quaternion(), d = this.delta.get(b), rest = this.rest.get(b);
+      if (d) b.quaternion.copy(pq).invert().multiply(d).multiply(pq).multiply(rest); else b.quaternion.copy(rest);
+      P.set(b, tmp.copy(pq).multiply(b.quaternion).clone());
+    }
+  }
+}
+// A rigged character as a group scaled to 1 unit tall (feet at y=0, facing +z); set root.scale to the height you want.
+function makeRiggedActor(gltfScene, { glowing = false } = {}) {
   const root = new THREE.Group(); root.rotation.order = 'YXZ';
   const body = new THREE.Group(); root.add(body);
-  const model = vamanaGLB.clone(true); model.scale.setScalar(1 / 1.905); body.add(model); // normalise to 1 unit tall, feet at y=0, facing +z
+  const model = SkeletonUtils.clone(gltfScene); model.scale.setScalar(1 / 1.9); body.add(model);
   const mats = new Set();
-  model.traverse((o) => { if (o.isMesh) { o.castShadow = true; o.receiveShadow = false; mats.add(o.material); } });
-  mats.forEach((m) => { m.emissive = new THREE.Color(0xffe2b0); m.emissiveMap = m.map; m.emissiveIntensity = 0; m.needsUpdate = true; });
-  const halo = glowSprite(root, 0xffc060, 1.9, 0, [0, 0.5, 0]);
-  const dummy = () => new THREE.Object3D();
+  model.traverse((o) => { if (o.isMesh) { o.castShadow = true; o.frustumCulled = false; mats.add(o.material); } });
+  if (glowing) mats.forEach((m) => { m.emissive = new THREE.Color(0xffe2b0); m.emissiveMap = m.map; m.emissiveIntensity = 0; m.needsUpdate = true; });
+  const halo = glowing ? glowSprite(root, 0xffc060, 1.9, 0, [0, 0.5, 0]) : null;
+  const rig = new BoneRig(model);
   return {
-    root, body, isModel: true, legL: dummy(), legR: dummy(), armL: dummy(), armR: dummy(), head: dummy(), umb: { visible: true },
-    reset() { body.position.set(0, 0, 0); body.rotation.set(0, 0, 0); root.rotation.set(0, root.rotation.y, 0); },
-    glow(k) { mats.forEach((m) => { m.emissiveIntensity = k; }); halo.material.opacity = Math.min(1, k * 1.0); },
+    root, body, rig, rot: (n, ax, deg) => rig.rot(n, ax, deg),
+    reset() { rig.reset(); body.position.set(0, 0, 0); body.rotation.set(0, 0, 0); root.rotation.set(0, root.rotation.y, 0); },
+    glow(k) { if (!glowing) return; mats.forEach((m) => { m.emissiveIntensity = k; }); halo.material.opacity = Math.min(1, k); },
   };
 }
 const faceTo = (root, x, z) => { root.rotation.y = Math.atan2(x - root.position.x, z - root.position.z); };
@@ -171,16 +199,16 @@ const sparks = (() => {
 })();
 
 const VH = 1.9, BH = 3.7; // Vamana / Bali heights
-const vamana = makeModelActor();
-const bali = makeFigure({ skin: 0x8a5a3c, cloth: 0xb01830, trim: 0xffcf50, crown: true });
-const guru = makeFigure({ skin: 0xc58f64, cloth: 0xf2ede0, hairWhite: true, beard: true, trim: 0xe0c070 });
+const vamana = makeRiggedActor(vamanaGLB, { glowing: true });
+const bali = makeRiggedActor(baliGLB);
+const guru = makeRiggedActor(guruGLB);
 hall.add(vamana.root, bali.root, guru.root);
 const facingVamanaGuru = new THREE.Vector3();
 
 // ================= set 2: cosmos (the two great steps) =================
 const cosmos = new THREE.Group(); scene.add(cosmos);
 const COS = 110; // Vamana's scale in the cosmic form
-const cv = makeModelActor();
+const cv = makeRiggedActor(vamanaGLB, { glowing: true });
 cv.root.scale.setScalar(COS); cosmos.add(cv.root);
 const earthPos = new THREE.Vector3(0, -26.5, 0); // first step: his feet land on top of the Earth
 const heavenFeet = new THREE.Vector3(0, 85, 46); // second step: ... and on the heavens
@@ -267,7 +295,7 @@ const pookalamTex = (() => {
   const warm = new THREE.PointLight(0xffa860, 40, 0, 1.3); warm.position.set(0, 7, 0); onam.add(warm);
   const moon = new THREE.DirectionalLight(0x9ab0ff, 0.9); moon.position.set(-20, 30, -10); onam.add(moon);
 }
-const baliO = makeFigure({ skin: 0x8a5a3c, cloth: 0xb01830, trim: 0xffcf50, crown: true });
+const baliO = makeRiggedActor(baliGLB);
 onam.add(baliO.root); baliO.root.scale.setScalar(BH);
 const villagers = [];
 {
@@ -352,59 +380,79 @@ function placeCamera(list, t) {
 // ================= poses =================
 const swing = (f, ph, amp) => { f.legL.rotation.x = Math.sin(ph) * amp; f.legR.rotation.x = -Math.sin(ph) * amp; f.armL.rotation.x = -Math.sin(ph) * amp * 0.9; };
 const idle = (f, t, k = 1) => { f.root.position.y += Math.sin(t * 1.8 + k) * 0.01 * f.root.scale.y; };
+const GH = 3.3; // Shukracharya's height
 function poseHall(t, phase) {
   [vamana, bali, guru].forEach((f) => f.reset());
-  const e = envAt(t);
-  // --- Bali
+  const e = envAt(t), breathe = Math.sin(t * 1.8);
+  // --- Bali Chakravarti
   bali.root.visible = true; bali.root.scale.setScalar(BH);
   if (phase === 1) {
     const back = smooth(prog(t, T(5, 0), T(5, 0.9)));
     bali.root.position.set(-3 - back * 3.2, 0, -0.5 + back * 0.4);
     faceTo(bali.root, vamanaHallPos.x, vamanaHallPos.z);
-    idle(bali, t);
-    if (t < T(2, 0)) { const open = smooth(prog(t, T(1, 0.1), T(1, 0.6))); bali.armL.rotation.z = -0.15 - open * 0.8; bali.armR.rotation.z = 0.15 + open * 0.8; bali.armL.rotation.x = -open * 0.4; bali.armR.rotation.x = -open * 0.4; }
-    else if (t < T(5, 0)) { bali.armL.rotation.z = -0.25; bali.armR.rotation.z = 0.25; }
+    bali.rot('chest', 'x', breathe * 1.2);
+    const open = smooth(prog(t, T(1, 0.1), T(1, 0.6))) * (t < T(2, 0) ? 1 : 0.55); // generous, open hands
+    bali.rot('upperArm_L', 'z', 26 * open); bali.rot('upperArm_R', 'z', -26 * open);
+    bali.rot('foreArm_L', 'x', -32 * open); bali.rot('foreArm_R', 'x', -32 * open);
+    if (t >= T(2, 0.2) && t < T(5, 0)) bali.rot('head', 'x', 6 * smooth(prog(t, T(2, 0.2), T(2, 0.8)))); // looks down at the tiny visitor
     if (t >= T(4, 0) && t < T(5, 0)) { // laughs and agrees
-      bali.root.position.y += Math.abs(Math.sin(t * 9)) * 0.06; bali.head.rotation.x = -0.25; bali.head.rotation.z = Math.sin(t * 9) * 0.06; bali.armL.rotation.x = -0.5; bali.armR.rotation.x = -0.5;
+      const k = Math.sin(t * 9); bali.root.position.y += Math.abs(k) * 0.05;
+      bali.rot('head', 'x', -16); bali.rot('chest', 'x', -4 + k * 2.5); bali.rot('upperArm_L', 'x', -14); bali.rot('upperArm_R', 'x', -14);
     }
-    if (t >= T(5, 0.1)) { const up = smooth(prog(t, T(5, 0.1), T(5, 0.6))); bali.armL.rotation.z = -0.3 - up * 1.3; bali.armR.rotation.z = 0.3 + up * 1.3; bali.head.rotation.x = -0.35 * up; }
+    if (t >= T(5, 0.1)) { // awe as Vamana grows
+      const up = smooth(prog(t, T(5, 0.1), T(5, 0.6)));
+      bali.rot('upperArm_L', 'z', 62 * up); bali.rot('upperArm_R', 'z', -62 * up); bali.rot('head', 'x', -24 * up); bali.rot('chest', 'x', -7 * up);
+    }
   } else {
-    const bow = smooth(prog(t, T(8, 0.1), T(8, 0.85)));
-    const sink = smooth(prog(t, T(9, 0.55), T(9, 1.0)));
+    const bow = smooth(prog(t, T(8, 0.1), T(8, 0.85))), sink = smooth(prog(t, T(9, 0.55), T(9, 1.0)));
     bali.root.position.set(0, -sink * 4.6, 3.4); bali.root.rotation.y = Math.PI;
-    bali.root.rotation.x = 0.62 * bow;
-    bali.head.rotation.x = 0.3 * bow;
-    bali.armL.rotation.set(-2.7 * bow, 0, 0.25 * bow); bali.armR.rotation.set(-2.7 * bow, 0, -0.25 * bow); // hands joined above the head
+    bali.rot('hips', 'x', 10 * bow); bali.rot('spine', 'x', 24 * bow); bali.rot('chest', 'x', 20 * bow); bali.rot('neck', 'x', 12 * bow); bali.rot('head', 'x', 8 * bow);
+    bali.rot('upperArm_L', 'x', -48 * bow); bali.rot('upperArm_R', 'x', -48 * bow); bali.rot('foreArm_L', 'x', -62 * bow); bali.rot('foreArm_R', 'x', -62 * bow);
+    bali.rot('upperArm_L', 'z', -12 * bow); bali.rot('upperArm_R', 'z', 12 * bow); // hands brought together
   }
-  // --- Guru (Shukracharya)
+  bali.rig.apply();
+  // --- Shukracharya
   guru.root.visible = phase === 1 && t < T(5, 1);
-  guru.root.position.set(-8.4, 0, -3.2); guru.root.scale.setScalar(BH * 0.86); faceTo(guru.root, 0, 0); idle(guru, t, 2);
-  if (t >= T(4, 0.35) && t < T(5, 0)) { guru.head.rotation.y = Math.sin(t * 7) * 0.5; guru.armR.rotation.x = -2.6; guru.armR.rotation.z = 0.25; }
-  if (t >= T(5, 0.05)) { guru.armL.rotation.z = -1.0; guru.armR.rotation.z = 1.0; }
-  // --- Vamana (the hero model: a static mesh, so all motion is whole-body)
+  guru.root.position.set(-8.4, 0, -3.2); guru.root.scale.setScalar(GH); faceTo(guru.root, 0, 0);
+  guru.rot('chest', 'x', breathe * 1.0);
+  if (t >= T(4, 0.3) && t < T(5, 0)) { // warns the king
+    const w = smooth(prog(t, T(4, 0.3), T(4, 0.5)));
+    guru.rot('head', 'y', Math.sin(t * 7) * 20 * w); guru.rot('upperArm_R', 'x', -72 * w); guru.rot('foreArm_R', 'x', -26 * w); guru.rot('chest', 'y', -8 * w);
+  }
+  if (t >= T(5, 0.05)) { const aw = smooth(prog(t, T(5, 0.05), T(5, 0.4))); guru.rot('head', 'x', -16 * aw); guru.rot('upperArm_R', 'z', -50 * aw); guru.rot('chest', 'x', -5 * aw); }
+  guru.rig.apply();
+  // --- Vamana
   if (phase === 1) {
     vamana.root.visible = t >= T(2, 0) - 0.05;
     const w = prog(t, T(2, 0), T(2, 1) + 0.25), e1 = 1 - (1 - w) ** 1.6;
     vamana.root.position.set(lerp(3.8, vamanaHallPos.x, e1), 0, lerp(28, vamanaHallPos.z, e1));
-    if (w < 1) {
+    if (w < 1) { // walking in
       vamana.root.rotation.y = Math.atan2(vamanaHallPos.x - 3.8, vamanaHallPos.z - 28);
-      const ph = t * 7.5; vamana.body.position.y = Math.abs(Math.sin(ph)) * 0.035; vamana.body.rotation.z = Math.sin(ph) * 0.05; vamana.body.rotation.x = 0.04;
+      const ph = t * 8, s1 = Math.sin(ph), c1 = Math.cos(ph);
+      vamana.rot('thigh_L', 'x', -30 * s1); vamana.rot('thigh_R', 'x', 30 * s1);
+      vamana.rot('shin_L', 'x', 38 * Math.max(0, -c1)); vamana.rot('shin_R', 'x', 38 * Math.max(0, c1));
+      vamana.rot('upperArm_L', 'x', 20 * s1); vamana.rot('foreArm_R', 'x', -4 * s1);
+      vamana.rot('hips', 'z', 3 * s1); vamana.rot('chest', 'y', -5 * s1); vamana.rot('head', 'y', 3 * s1);
+      vamana.body.position.y = Math.abs(s1) * 0.03;
     } else {
       faceTo(vamana.root, bali.root.position.x, bali.root.position.z);
-      vamana.body.rotation.z = Math.sin(t * 1.6) * 0.02;
-      if (t >= T(3, 0) && t < T(4, 0)) vamana.body.rotation.x = -0.06 + Math.sin(t * 3) * 0.02; // tips back to look up at the king as he asks
+      vamana.rot('chest', 'x', breathe * 1.5);
+      const ask = smooth(prog(t, T(3, 0.05), T(3, 0.35))) * (t < T(4, 0) ? 1 : 1 - smooth(prog(t, T(4, 0), T(4, 0.3)))); // holds out the kamandalu and asks
+      vamana.rot('head', 'x', -15 * ask); vamana.rot('chest', 'x', -4 * ask);
     }
     vamana.root.scale.setScalar(VH * growth(t));
     vamana.glow(smooth(prog(t, T(5, 0.1), T(5, 0.9))) * 0.45);
   } else {
-    // giant Vamana descends until his foot rests on Bali's bowed head, then presses him down into Sutala
-    vamana.root.visible = true; vamana.root.scale.setScalar(13);
-    const sink = smooth(prog(t, T(9, 0.55), T(9, 1.0))), settle = smooth(prog(t, T(9, 0), T(9, 0.35)));
-    const y = t < T(9, 0) ? lerp(16, 4.5, smooth(prog(t, T(8, 0), T(8, 1)))) : lerp(4.5, 2.85, settle);
-    vamana.root.position.set(0, y - 2.65 * sink, 1.5); vamana.root.rotation.y = 0;
-    vamana.body.rotation.x = 0.06 * (1 - settle);
+    // giant Vamana lifts his right foot over the bowed king, lowers it onto his head and presses him into Sutala
+    vamana.root.visible = true; vamana.root.scale.setScalar(13); vamana.root.rotation.y = 0;
+    vamana.root.position.set(0, 0, -2.8);
+    const lift = smooth(prog(t, T(8, 0.0), T(8, 0.9))), press = smooth(prog(t, T(9, 0.2), T(9, 0.95))), bless = smooth(prog(t, T(9, 0.45), T(9, 0.9)));
+    const thigh = -72 * lift + 57 * press, shin = 12 * lift - 8 * press;
+    vamana.rot('thigh_R', 'x', thigh); vamana.rot('shin_R', 'x', shin); vamana.rot('foot_R', 'x', -(thigh + shin) - 4); // keep the sole level
+    vamana.rot('spine', 'x', -8 * lift * (1 - press)); vamana.rot('upperArm_L', 'x', -66 * bless); vamana.rot('foreArm_L', 'x', -30 * bless);
     vamana.glow(0.3);
   }
+  vamana.rig.apply();
   fireLight.intensity = 30 * (0.85 + 0.15 * Math.sin(t * 17) + 0.1 * Math.sin(t * 31 + 1) + e * 0.2);
   flames.forEach((m, i) => { m.scale.set(1 + 0.15 * Math.sin(t * 11 + i), 1 + 0.3 * Math.sin(t * 13 + i * 2) + e * 0.3, 1 + 0.15 * Math.cos(t * 9 + i)); m.rotation.y = t * 2 + i; });
   const pos = sparks.g.attributes.position;
@@ -420,6 +468,10 @@ function poseCosmos(t) {
   const up2 = prog(t, T(7, 0), T(7, 0.5)), e2 = smooth(up2);   // second step: strides up onto the heavens
   cv.root.position.set(0, (1 - land1) * 24 + e2 * 85 + Math.sin(Math.PI * up2) * 22, e2 * 46);
   cv.body.rotation.x = 0.07 * Math.sin(Math.PI * land1) + 0.1 * Math.sin(Math.PI * up2);
+  const air1 = 1 - land1, sw = Math.sin(Math.PI * up2);
+  cv.rot('thigh_R', 'x', -50 * air1); cv.rot('shin_R', 'x', 30 * air1); cv.rot('thigh_L', 'x', 14 * air1 - 46 * sw); cv.rot('shin_L', 'x', 30 * sw); cv.rot('thigh_R', 'x', 18 * sw);
+  cv.rot('upperArm_L', 'z', 22); cv.rot('chest', 'x', -4);
+  cv.rig.apply();
   earth.rotation.y = t * 0.05;
   earth.scale.setScalar(Math.max(0.001, smooth(prog(t, T(6, 0), T(6, 0.25)))));
   const r1 = prog(t, T(6, 0.45), T(6, 0.9)), r2 = prog(t, T(7, 0.5), T(7, 0.95));
@@ -430,10 +482,12 @@ function poseCosmos(t) {
 }
 function poseOnam(t) {
   const e = envAt(t);
-  baliO.reset(); baliO.root.position.set(-2.6, 0, 4.2); faceTo(baliO.root, 6, 12);
-  baliO.armR.rotation.set(-2.6 + Math.sin(t * 3) * 0.2, 0, 0.35); baliO.armL.rotation.set(-0.3, 0, -0.5); baliO.head.rotation.x = -0.1 + e * 0.04;
+  baliO.reset(); baliO.root.position.set(-2.6, 0, 4.2); baliO.root.scale.setScalar(BH); faceTo(baliO.root, 6, 12);
+  const wv = Math.sin(t * 3);
+  baliO.rot('upperArm_R', 'z', -125 + wv * 6); baliO.rot('foreArm_R', 'z', -18 * wv); baliO.rot('upperArm_L', 'z', 14);
+  baliO.rot('head', 'x', -6 + e * 3); baliO.rot('chest', 'x', Math.sin(t * 2.2) * 1.5);
   baliO.root.position.y = Math.abs(Math.sin(t * 2.2)) * 0.05;
-  baliO.glow(0.2);
+  baliO.rig.apply();
   villagers.forEach(({ f, ph }) => { f.reset(); const w = Math.sin(t * 3.2 + ph); f.armL.rotation.set(-2.5 + w * 0.25, 0, -0.3); f.armR.rotation.set(-2.5 - w * 0.25, 0, 0.3); f.root.position.y = Math.abs(w) * 0.1; });
   const ff = onam.userData.fireflies, pos = ff.g.attributes.position;
   for (let i = 0; i < ff.n; i++) { const [x, y, z, p] = ff.seeds[i]; pos.setXYZ(i, x + Math.sin(t * 0.6 + p) * 1.5, y + Math.sin(t * 0.9 + p * 2) * 0.8, z + Math.cos(t * 0.5 + p) * 1.5); }
