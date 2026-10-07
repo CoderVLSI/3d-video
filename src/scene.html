@@ -1,0 +1,29 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<style>
+  html, body { margin: 0; background: #02020a; overflow: hidden; }
+  canvas { display: block; }
+  #cap {
+    position: fixed; left: 0; right: 0; bottom: 56px; text-align: center; padding: 0 120px;
+    font: 600 34px/1.35 "Helvetica Neue", Arial, sans-serif; color: rgba(255,255,255,.55);
+    text-shadow: 0 2px 14px rgba(0,0,0,.9);
+  }
+  #cap span.on { color: #fff; }
+  #title {
+    position: fixed; top: 44px; left: 0; right: 0; text-align: center; opacity: 0;
+    font: 700 22px/1 "Helvetica Neue", Arial, sans-serif; letter-spacing: .38em; text-transform: uppercase;
+    color: #cfe8ff; text-shadow: 0 0 18px rgba(120,180,255,.8);
+  }
+</style>
+</head>
+<body>
+<div id="title"></div>
+<div id="cap"></div>
+<script type="importmap">
+{ "imports": { "three": "/node_modules/three/build/three.module.js", "three/addons/": "/node_modules/three/examples/jsm/" } }
+</script>
+<script type="module" src="/src/scene.js"></script>
+</body>
+</html>

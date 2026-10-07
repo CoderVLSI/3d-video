@@ -1,0 +1,24 @@
+{
+  "name": "3d-video",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/CoderVLSI/3d-video.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/CoderVLSI/3d-video/issues"
+  },
+  "homepage": "https://github.com/CoderVLSI/3d-video#readme",
+  "dependencies": {
+    "playwright-core": "^1.63.0",
+    "three": "^0.186.1"
+  }
+}
