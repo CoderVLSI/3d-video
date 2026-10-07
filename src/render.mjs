@@ -1,10 +1,11 @@
 // Step 2: render the Three.js scene frame-by-frame in headless Chromium and mux with the ElevenLabs audio.
 //   node src/render.mjs <project>                 -> out/<project>/video.mp4
 //   node src/render.mjs <project> --stills 2,6,14 -> out/<project>/still_<t>.png (quick visual check)
+//   node src/render.mjs <project> --workers 4     -> parallel browsers; measured SLOWER here (SwiftShader already uses all cores per frame), kept for machines with a GPU
 import { chromium } from 'playwright-core';
 import { createServer } from 'node:http';
 import { readFile } from 'node:fs/promises';
-import { readFileSync, writeFileSync } from 'node:fs';
+import { mkdirSync, readdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { spawn, execFileSync } from 'node:child_process';
 import { extname, join, normalize } from 'node:path';
 
@@ -15,6 +16,11 @@ const OUT = `out/${project}`;
 const FPS = 30, ENV_FPS = 30, TAIL = 1.2;
 const timeline = JSON.parse(readFileSync(`${OUT}/timeline.json`, 'utf8'));
 const total = timeline.duration + TAIL;
+const argv = process.argv;
+const arg = (k) => (argv.includes(k) ? argv[argv.indexOf(k) + 1] : null);
+const WORKERS = Number(arg('--workers') || 1), SLICE = arg('--slice'); // --slice i/n: this process renders frames i, i+n, i+2n... to disk
+const FRAMES = `${OUT}/frames`;
+const NFRAMES = Math.ceil(total * FPS);
 
 // Amplitude envelope of the narration (RMS per frame, normalised) so the 3D scene can react to the voice.
 function envelope() {
@@ -45,6 +51,39 @@ const server = createServer(async (req, res) => {
 }).listen(0);
 const port = server.address().port;
 
+// audio graph: narration + (looped) background bed + timed sound effects
+function audioArgs() {
+  const sfx = timeline.sfx ?? [], f = total.toFixed(2);
+  const inputs = ['-i', `${OUT}/narration.mp3`, '-stream_loop', '-1', '-i', `${OUT}/ambience.mp3`, ...sfx.flatMap((fx) => ['-i', `${OUT}/${fx.file}`])];
+  const graph = [
+    `[1:a]apad=pad_dur=${TAIL}[nar]`,
+    `[2:a]atrim=0:${f},asetpts=N/SR/TB,afade=t=in:d=1.5,afade=t=out:st=${(total - 2).toFixed(2)}:d=2,volume=${process.env.BED_VOLUME || 0.28}[bed]`,
+    ...sfx.map((fx, i) => `[${i + 3}:a]adelay=${Math.round(fx.at * 1000)}|${Math.round(fx.at * 1000)},volume=${fx.volume}[fx${i}]`),
+    `[nar][bed]${sfx.map((_, i) => `[fx${i}]`).join('')}amix=inputs=${2 + sfx.length}:duration=longest:normalize=0,atrim=0:${f}[aout]`,
+  ].join(';');
+  return { inputs, graph, f };
+}
+const encodeArgs = (f) => ['-map', '0:v', '-map', '[aout]', '-c:v', 'libx264', '-preset', 'medium', '-crf', '18', '-pix_fmt', 'yuv420p',
+  '-c:a', 'aac', '-b:a', '192k', '-t', f, '-movflags', '+faststart', `${OUT}/video.mp4`];
+
+// Parallel mode: the supervisor starts one worker process per slice (each its own browser), then muxes the frames on disk.
+if (WORKERS > 1 && !SLICE && !argv.includes('--stills')) {
+  rmSync(FRAMES, { recursive: true, force: true }); mkdirSync(FRAMES, { recursive: true });
+  const t0 = Date.now();
+  const codes = await Promise.all(Array.from({ length: WORKERS }, (_, i) => new Promise((resolve) => {
+    const w = spawn(process.execPath, [argv[1], project, '--slice', `${i}/${WORKERS}`], { stdio: ['ignore', 'inherit', 'inherit'], env: process.env });
+    w.on('close', resolve);
+  })));
+  if (codes.some((c) => c !== 0)) throw new Error(`worker failed: ${codes}`);
+  const got = readdirSync(FRAMES).length;
+  if (got !== NFRAMES) throw new Error(`expected ${NFRAMES} frames, found ${got}`);
+  const { inputs, graph, f } = audioArgs();
+  const ff = spawn('ffmpeg', ['-y', '-v', 'error', '-framerate', String(FPS), '-i', `${FRAMES}/%05d.jpg`, ...inputs, '-filter_complex', graph, ...encodeArgs(f)], { stdio: 'inherit' });
+  const code = await new Promise((r) => ff.on('close', r));
+  console.log(`rendered ${NFRAMES} frames with ${WORKERS} workers in ${((Date.now() - t0) / 1000).toFixed(0)}s, ffmpeg exit ${code}`);
+  rmSync(FRAMES, { recursive: true, force: true }); server.close(); process.exit(code);
+}
+
 const browser = await chromium.launch({
   executablePath: process.env.CHROMIUM_PATH || undefined,
   args: ['--use-angle=swiftshader', '--use-gl=angle', '--enable-unsafe-swiftshader', '--ignore-gpu-blocklist', '--enable-webgl'],
@@ -63,24 +102,17 @@ if (stillsArg > -1) {
     await page.screenshot({ path: `${OUT}/still_${t}.png` });
     console.log('still', t);
   }
+} else if (SLICE) {
+  // worker: render every n-th frame to disk
+  const [k, n] = SLICE.split('/').map(Number), t0 = Date.now();
+  for (let i = k; i < NFRAMES; i += n) {
+    await page.evaluate((t) => window.renderAt(t), i / FPS);
+    await page.screenshot({ type: 'jpeg', quality: 95, path: `${FRAMES}/${String(i + 1).padStart(5, '0')}.jpg` });
+    if (i % (n * 30) === k) console.log(`worker ${k}: frame ${i}/${NFRAMES}  ${((Date.now() - t0) / 1000).toFixed(0)}s`);
+  }
 } else {
-  const n = Math.ceil(total * FPS);
-  // audio graph: narration + (looped) background bed + timed sound effects
-  const sfx = timeline.sfx ?? [];
-  const inputs = ['-i', `${OUT}/narration.mp3`, '-stream_loop', '-1', '-i', `${OUT}/ambience.mp3`, ...sfx.flatMap((fx) => ['-i', `${OUT}/${fx.file}`])];
-  const f = total.toFixed(2);
-  const graph = [
-    `[1:a]apad=pad_dur=${TAIL}[nar]`,
-    `[2:a]atrim=0:${f},asetpts=N/SR/TB,afade=t=in:d=1.5,afade=t=out:st=${(total - 2).toFixed(2)}:d=2,volume=${process.env.BED_VOLUME || 0.28}[bed]`,
-    ...sfx.map((fx, i) => `[${i + 3}:a]adelay=${Math.round(fx.at * 1000)}|${Math.round(fx.at * 1000)},volume=${fx.volume}[fx${i}]`),
-    `[nar][bed]${sfx.map((_, i) => `[fx${i}]`).join('')}amix=inputs=${2 + sfx.length}:duration=longest:normalize=0,atrim=0:${f}[aout]`,
-  ].join(';');
-  const ff = spawn('ffmpeg', [
-    '-y', '-v', 'error', '-f', 'image2pipe', '-framerate', String(FPS), '-c:v', 'mjpeg', '-i', '-', ...inputs,
-    '-filter_complex', graph,
-    '-map', '0:v', '-map', '[aout]', '-c:v', 'libx264', '-preset', 'medium', '-crf', '18', '-pix_fmt', 'yuv420p',
-    '-c:a', 'aac', '-b:a', '192k', '-t', f, '-movflags', '+faststart', `${OUT}/video.mp4`,
-  ], { stdio: ['pipe', 'inherit', 'inherit'] });
+  const n = NFRAMES, { inputs, graph, f } = audioArgs();
+  const ff = spawn('ffmpeg', ['-y', '-v', 'error', '-f', 'image2pipe', '-framerate', String(FPS), '-c:v', 'mjpeg', '-i', '-', ...inputs, '-filter_complex', graph, ...encodeArgs(f)], { stdio: ['pipe', 'inherit', 'inherit'] });
   const done = new Promise((r) => ff.on('close', r));
   const t0 = Date.now();
   for (let i = 0; i < n; i++) {
