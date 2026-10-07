@@ -9,6 +9,9 @@ export const SCRIPT = [
   'అప్పుడు గొడుగు పట్టుకున్న ఒక చిన్న బ్రాహ్మణ బాలుడు వచ్చాడు; ఆయనే శ్రీమహావిష్ణువు వామనావతారం.',
   'వామనుడు కేవలం మూడు అడుగుల నేలను అడిగాడు.',
   'బలి నవ్వి, సంతోషంగా అంగీకరించాడు, అయినా గురువు శుక్రాచార్యుడు హెచ్చరించాడు.',
+  'శుక్రాచార్యుడు దానాన్ని ఆపడానికి, సూక్ష్మరూపంలో కమండలం నీటి ధారను అడ్డగించాడు.',
+  'వామనుడు ఒక దర్భ పుల్లను ఆ కమండలం మూతిలో గుచ్చగా, శుక్రాచార్యుని ఒక కన్ను పోయింది.',
+  'అందుకే ఆయనను ఏకాక్షుడని పిలుస్తారు; నీరు ధారగా పడింది, బలి దానం చేశాడు.',
   'అప్పుడు ఆ చిన్న బాలుడు పెరగడం మొదలుపెట్టాడు, పర్వతాల కంటే ఎత్తుగా, ఆకాశం కంటే ఎత్తుగా.',
   'మొదటి అడుగుతో ఆయన భూమి అంతటినీ కప్పేశాడు.',
   'రెండవ అడుగుతో స్వర్గాన్ని కప్పేశాడు.',
@@ -16,7 +19,7 @@ export const SCRIPT = [
   'వామనుడు తన పాదాన్ని ఆ తలపై ఉంచి, బలిని పాతాళమైన సుతల లోకానికి రాజుగా పంపాడు.',
   'ప్రతి సంవత్సరం బలి తన ప్రజలను చూడటానికి వస్తాడు, ఆ రోజునే మనం ఓనంగా జరుపుకుంటాం.',
 ];
-export const EXPECT_SENTENCES = 11;
+export const EXPECT_SENTENCES = 14;
 
 export const TITLES = { start: 'వామనుడు', end: 'ఓనం శుభాకాంక్షలు' };
 
@@ -25,8 +28,8 @@ export const AMBIENCE =
 
 export const SFX = [
   { key: 'bell', prompt: 'A single resonant temple bell strike with long shimmering decay', seconds: 4, at: [2, 0.0], volume: 0.7 },
-  { key: 'grow', prompt: 'Epic rising magical swell with deep rumbling whoosh, cinematic growth', seconds: 6, at: [5, 0.05], volume: 0.8 },
-  { key: 'boom1', prompt: 'Deep cinematic bass impact boom with reverb tail', seconds: 3, at: [6, 0.45], volume: 0.9 },
-  { key: 'boom2', prompt: 'Deep cinematic bass impact boom with shimmering divine choir tail', seconds: 3, at: [7, 0.5], volume: 0.9 },
-  { key: 'conch', prompt: 'A single blown conch shell note, sacred and resonant', seconds: 4, at: [9, 0.0], volume: 0.6 },
+  { key: 'grow', prompt: 'Epic rising magical swell with deep rumbling whoosh, cinematic growth', seconds: 6, at: [8, 0.05], volume: 0.8 },
+  { key: 'boom1', prompt: 'Deep cinematic bass impact boom with reverb tail', seconds: 3, at: [9, 0.45], volume: 0.9 },
+  { key: 'boom2', prompt: 'Deep cinematic bass impact boom with shimmering divine choir tail', seconds: 3, at: [10, 0.5], volume: 0.9 },
+  { key: 'conch', prompt: 'A single blown conch shell note, sacred and resonant', seconds: 4, at: [12, 0.0], volume: 0.6 },
 ];

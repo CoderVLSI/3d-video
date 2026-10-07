@@ -134,7 +134,7 @@ function makeRiggedActor(gltfScene, { glowing = false } = {}) {
   const halo = glowing ? glowSprite(root, 0xffc060, 1.9, 0, [0, 0.5, 0]) : null;
   const rig = new BoneRig(model);
   return {
-    root, body, rig, rot: (n, ax, deg) => rig.rot(n, ax, deg),
+    root, body, model, rig, rot: (n, ax, deg) => rig.rot(n, ax, deg),
     reset() { rig.reset(); body.position.set(0, 0, 0); body.rotation.set(0, 0, 0); root.rotation.set(0, root.rotation.y, 0); },
     glow(k) { if (!glowing) return; mats.forEach((m) => { m.emissiveIntensity = k; }); halo.material.opacity = Math.min(1, k); },
   };
@@ -313,13 +313,17 @@ const villagers = [];
 
 // ================= timeline helpers =================
 let TL, SN, B, END, envelope = [], FPS_ENV = 30, lastCapKey = '';
-const T = (i, f = 0) => SN[i].start + f * (SN[i].end - SN[i].start);
-const D = (i) => SN[i].end - SN[i].start;
+const NEW = 3; // sentences 5..7 (kamandalu scene) were inserted; T/D keep the original numbering (old index >= 5 maps to + NEW)
+const I = (i) => (i >= 5 ? i + NEW : i);
+const T = (i, f = 0) => { const s = SN[I(i)]; return s.start + f * (s.end - s.start); };
+const D = (i) => SN[I(i)].end - SN[I(i)].start;
+const N = (i, f = 0) => { const s = SN[i]; return s.start + f * (s.end - s.start); }; // raw index, used for the new sentences
 const prog = (t, a, b) => clamp01((t - a) / Math.max(1e-6, b - a));
 const envAt = (t) => { const x = t * FPS_ENV, i = Math.floor(x), f = x - i; return (envelope[i] ?? 0) + ((envelope[i + 1] ?? 0) - (envelope[i] ?? 0)) * f; };
 
 // camera key lists are built at init (they depend on sentence times)
 let CAM = null;
+const potWorld = new THREE.Vector3(3.3, 1.0, 2.4); // world position of Vamana's kamandalu, refreshed every frame
 const growth = (t) => (t < T(5, 0.05) ? 1 : Math.exp(Math.log(18) * smooth(prog(t, T(5, 0.05), T(5, 0.97)))));
 const vamanaHallPos = new THREE.Vector3(3.3, 0, 2.4);
 function buildCameras() {
@@ -338,6 +342,16 @@ function buildCameras() {
       [T(3, 1), [0.9, 1.3, 4.7], [3.3, 1.2, 2.4]],
       [T(4, 0), [3.8, 3.4, 6.8], [-3, 3.2, 0]],
       [T(4, 1), [4.4, 3.6, 5.8], [-3, 3.4, 0]],
+      [N(5, 0), [-2.5, 4.2, 12.5], [-2.2, 1.8, -0.5]],
+      [N(5, 0.55), [-2.0, 3.8, 11.5], (t) => [lerp(-3, potWorld.x, prog(t, N(5, 0.45), N(5, 0.9))), 1.6, lerp(-0.5, potWorld.z, prog(t, N(5, 0.45), N(5, 0.9)))]],
+      [N(5, 1), (t) => [potWorld.x - 1.3, potWorld.y + 0.5, potWorld.z + 2.2], (t) => [potWorld.x, potWorld.y, potWorld.z]],
+      [N(6, 0.3), (t) => [potWorld.x - 0.75, potWorld.y + 0.3, potWorld.z + 1.25], (t) => [potWorld.x, potWorld.y + 0.04, potWorld.z]],
+      [N(6, 0.56), (t) => [potWorld.x - 0.75, potWorld.y + 0.3, potWorld.z + 1.25], (t) => [potWorld.x, potWorld.y + 0.04, potWorld.z]],
+      [N(6, 0.72), [-1.0, 3.6, 3.2], [GURU_LAND.x, 2.1, GURU_LAND.z]],
+      [N(7, 0.0), [3.0, 3.1, -0.4], [GURU_LAND.x, 2.7, GURU_LAND.z]],
+      [N(7, 0.4), [3.0, 3.1, -0.4], [GURU_LAND.x, 2.7, GURU_LAND.z]],
+      [N(7, 0.62), (t) => [potWorld.x - 1.2, potWorld.y + 0.15, potWorld.z + 1.8], (t) => [potWorld.x, potWorld.y * 0.5, potWorld.z]],
+      [N(7, 1), (t) => [potWorld.x - 1.2, potWorld.y + 0.15, potWorld.z + 1.8], (t) => [potWorld.x, potWorld.y * 0.5, potWorld.z]],
       [T(5, 0), growCam, growLook],
       [T(5, 1), growCam, growLook],
     ],
@@ -381,9 +395,35 @@ function placeCamera(list, t) {
 const swing = (f, ph, amp) => { f.legL.rotation.x = Math.sin(ph) * amp; f.legR.rotation.x = -Math.sin(ph) * amp; f.armL.rotation.x = -Math.sin(ph) * amp * 0.9; };
 const idle = (f, t, k = 1) => { f.root.position.y += Math.sin(t * 1.8 + k) * 0.01 * f.root.scale.y; };
 const GH = 3.3; // Shukracharya's height
+// small life for the static-mesh faces: slow looks and nods (the textures cannot emote, the heads can still move), a touch livelier with the voice
+const alive = (f, t, seed, env, gaze = 0) => {
+  f.rot('head', 'y', gaze + Math.sin(t * 0.6 + seed) * 6 + Math.sin(t * 1.7 + seed * 3) * 1.5);
+  f.rot('head', 'x', Math.sin(t * 0.8 + seed * 2) * 2.5 + env * 3);
+  f.rot('chest', 'y', Math.sin(t * 0.45 + seed) * 2);
+};
+// kamandalu scene props: Shukracharya's pinned eye, the darbha blade, the water
+const eyeHit = (() => {
+  guru.model.updateMatrixWorld(true);
+  const head = guru.rig.bones.get('head');
+  const m = new THREE.Mesh(new THREE.SphereGeometry(0.03, 16, 12), new THREE.MeshStandardMaterial({ color: 0x1c0507, roughness: 0.4 }));
+  m.position.copy(head.worldToLocal(guru.model.localToWorld(new THREE.Vector3(-0.03, 1.665, 0.09)))); // the character's left eye (x is his left)
+  head.add(m); m.visible = false; return m;
+})();
+const kusha = new THREE.Mesh(new THREE.CylinderGeometry(0.02, 0.008, 1, 8), new THREE.MeshStandardMaterial({ color: 0x8fd03a, roughness: 0.5, emissive: 0x2a5a0a, emissiveIntensity: 0.6 }));
+kusha.visible = false; hall.add(kusha);
+const spoutGlow = glowSprite(hall, 0xffc870, 1.4, 0, [0, 0, 0]);
+const flashGlow = glowSprite(hall, 0xff7a40, 4.5, 0, [0, 0, 0]);
+const water = (() => {
+  const n = 90, g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.BufferAttribute(new Float32Array(n * 3), 3));
+  const p = new THREE.Points(g, new THREE.PointsMaterial({ color: 0xbfe6ff, size: 0.1, transparent: true, opacity: 0.9, blending: THREE.AdditiveBlending, depthWrite: false }));
+  p.visible = false; p.frustumCulled = false; hall.add(p); return { p, g, n };
+})();
+const _a = new THREE.Vector3(), _b = new THREE.Vector3(), _c = new THREE.Vector3(), _spout = new THREE.Vector3(), _up = new THREE.Vector3(0, 1, 0);
+const GURU_HOME = new THREE.Vector3(-8.4, 0, -3.2), GURU_LAND = new THREE.Vector3(2.4, 0, -4.8);
 function poseHall(t, phase) {
   [vamana, bali, guru].forEach((f) => f.reset());
   const e = envAt(t), breathe = Math.sin(t * 1.8);
+  alive(bali, t, 1.0, e, phase === 1 ? 8 : 0); alive(guru, t, 2.3, e, -10); alive(vamana, t, 4.1, e);
   // --- Bali Chakravarti
   bali.root.visible = true; bali.root.scale.setScalar(BH);
   if (phase === 1) {
@@ -395,7 +435,7 @@ function poseHall(t, phase) {
     bali.rot('upperArm_L', 'z', 26 * open); bali.rot('upperArm_R', 'z', -26 * open);
     bali.rot('foreArm_L', 'x', -32 * open); bali.rot('foreArm_R', 'x', -32 * open);
     if (t >= T(2, 0.2) && t < T(5, 0)) bali.rot('head', 'x', 6 * smooth(prog(t, T(2, 0.2), T(2, 0.8)))); // looks down at the tiny visitor
-    if (t >= T(4, 0) && t < T(5, 0)) { // laughs and agrees
+    if (t >= T(4, 0) && t < N(5, 0)) { // laughs and agrees
       const k = Math.sin(t * 9); bali.root.position.y += Math.abs(k) * 0.05;
       bali.rot('head', 'x', -16); bali.rot('chest', 'x', -4 + k * 2.5); bali.rot('upperArm_L', 'x', -14); bali.rot('upperArm_R', 'x', -14);
     }
@@ -411,16 +451,6 @@ function poseHall(t, phase) {
     bali.rot('upperArm_L', 'z', -12 * bow); bali.rot('upperArm_R', 'z', 12 * bow); // hands brought together
   }
   bali.rig.apply();
-  // --- Shukracharya
-  guru.root.visible = phase === 1 && t < T(5, 1);
-  guru.root.position.set(-8.4, 0, -3.2); guru.root.scale.setScalar(GH); faceTo(guru.root, 0, 0);
-  guru.rot('chest', 'x', breathe * 1.0);
-  if (t >= T(4, 0.3) && t < T(5, 0)) { // warns the king
-    const w = smooth(prog(t, T(4, 0.3), T(4, 0.5)));
-    guru.rot('head', 'y', Math.sin(t * 7) * 20 * w); guru.rot('upperArm_R', 'x', -72 * w); guru.rot('foreArm_R', 'x', -26 * w); guru.rot('chest', 'y', -8 * w);
-  }
-  if (t >= T(5, 0.05)) { const aw = smooth(prog(t, T(5, 0.05), T(5, 0.4))); guru.rot('head', 'x', -16 * aw); guru.rot('upperArm_R', 'z', -50 * aw); guru.rot('chest', 'x', -5 * aw); }
-  guru.rig.apply();
   // --- Vamana
   if (phase === 1) {
     vamana.root.visible = t >= T(2, 0) - 0.05;
@@ -453,6 +483,65 @@ function poseHall(t, phase) {
     vamana.glow(0.3);
   }
   vamana.rig.apply();
+  // --- Shukracharya and the kamandalu (needs Vamana's posed hand)
+  vamana.root.updateMatrixWorld(true);
+  const hL = vamana.rig.bones.get('hand_L').getWorldPosition(_a), hR = vamana.rig.bones.get('hand_R').getWorldPosition(_b);
+  potWorld.copy(hL).add(_c.set(0, -0.09 * vamana.root.scale.y / 1.9, 0));
+  _spout.copy(potWorld).add(_c.set(0, 0.08, 0));
+  const tFly0 = N(5, 0.06), tFly1 = N(5, 0.82), tPop0 = N(6, 0.5), tPop1 = N(6, 0.74);
+  const s1 = vamana.root.visible && phase === 1;
+  if (phase === 1) {
+    guru.root.visible = t < T(5, 1);
+    if (t < tFly0) { // at home, warning the king
+      guru.root.position.copy(GURU_HOME); guru.root.scale.setScalar(GH); faceTo(guru.root, 0, 0);
+      guru.rot('chest', 'x', breathe);
+      if (t >= T(4, 0.3)) { const w = smooth(prog(t, T(4, 0.3), T(4, 0.5))); guru.rot('head', 'y', Math.sin(t * 7) * 20 * w); guru.rot('upperArm_R', 'x', -72 * w); guru.rot('foreArm_R', 'x', -26 * w); guru.rot('chest', 'y', -8 * w); }
+    } else if (t < tFly1) { // shrinks into a tiny form and flies to the spout
+      const u = prog(t, tFly0, tFly1), e1 = smooth(u);
+      guru.root.position.lerpVectors(GURU_HOME, _spout, e1); guru.root.position.y += Math.sin(Math.PI * u) * 3.0 + (_spout.y - GURU_HOME.y) * 0 ;
+      guru.root.scale.setScalar(GH * Math.pow(1 - e1, 1.8) + 0.035);
+      guru.root.rotation.y = Math.atan2(_spout.x - GURU_HOME.x, _spout.z - GURU_HOME.z);
+      guru.root.rotation.x = -0.9 * Math.sin(Math.PI * u); // streaks horizontally in flight
+      guru.rot('upperArm_L', 'z', 50 * u); guru.rot('upperArm_R', 'z', -50 * u);
+    } else if (t < tPop0) { guru.root.visible = false; // inside the spout, blocking the water
+    } else { // thrown out by the darbha blade, clutching his eye
+      const u = smooth(prog(t, tPop0, tPop1)), k = smooth(prog(t, tPop0 + 0.1, tPop0 + 0.8));
+      guru.root.position.lerpVectors(_spout, GURU_LAND, u); guru.root.position.y += Math.sin(Math.PI * u) * 1.6;
+      guru.root.scale.setScalar(GH * u + 0.035 * (1 - u));
+      faceTo(guru.root, vamana.root.position.x, vamana.root.position.z);
+      guru.root.rotation.x = 0.35 * Math.sin(Math.PI * u) * 0 ;
+      const stagger = Math.max(0, 1 - (t - tPop1) / 2.2);
+      guru.rot('upperArm_R', 'x', -120 * k); guru.rot('foreArm_R', 'x', -120 * k); guru.rot('upperArm_R', 'z', -22 * k);
+      guru.rot('head', 'x', 14 * k); guru.rot('chest', 'x', 9 * k + stagger * Math.sin(t * 9) * 5); guru.rot('chest', 'z', stagger * Math.sin(t * 7) * 5);
+    }
+    eyeHit.visible = t >= tPop0 + 0.05;
+  } else { guru.root.visible = false; }
+  guru.rig.apply();
+  // the darbha blade: from Vamana's free hand into the spout
+  const kOn = phase === 1 && t > N(6, 0.1) && t < N(6, 0.64);
+  kusha.visible = kOn;
+  if (kOn) {
+    const th = smooth(prog(t, N(6, 0.18), N(6, 0.5)));
+    const tail = _a.copy(_spout).add(_b.set(-0.25, 0.85, 0.3)), tip = _c.copy(_spout).add(_b.set(-0.1, 0.45 * (1 - th) - 0.02, 0.1 * (1 - th))); // pushed down into the spout
+    kusha.position.copy(tail).add(tip).multiplyScalar(0.5);
+    const d = _b.copy(tip).sub(tail); kusha.scale.set(1, d.length(), 1); kusha.quaternion.setFromUnitVectors(_up, d.normalize());
+  }
+  // glow at the spout while he blocks it, flash when he is thrown out
+  const blocked = phase === 1 && t > tFly1 - 0.15 && t < tPop0;
+  spoutGlow.position.copy(_spout); spoutGlow.material.opacity = blocked ? 0.55 + 0.2 * Math.sin(t * 14) : 0;
+  const fl = phase === 1 ? Math.max(0, 1 - Math.abs(t - tPop0) / 0.35) : 0;
+  flashGlow.position.copy(_spout); flashGlow.material.opacity = fl * 0.9;
+  // water pours once the spout is free
+  const wOn = phase === 1 && t > N(7, 0.1) && t < T(5, 0) + 0.8;
+  water.p.visible = wOn;
+  if (wOn) {
+    const pos = water.g.attributes.position, fade = smooth(prog(t, N(7, 0.1), N(7, 0.3)));
+    for (let i = 0; i < water.n; i++) {
+      const ph = (t * 1.6 + i / water.n) % 1, fall = ph * ph, jit = Math.sin(i * 12.9898) * 0.03;
+      pos.setXYZ(i, _spout.x - 0.08 * ph + jit, _spout.y - fall * _spout.y * fade, _spout.z + 0.18 * ph + jit);
+    }
+    pos.needsUpdate = true;
+  }
   fireLight.intensity = 30 * (0.85 + 0.15 * Math.sin(t * 17) + 0.1 * Math.sin(t * 31 + 1) + e * 0.2);
   flames.forEach((m, i) => { m.scale.set(1 + 0.15 * Math.sin(t * 11 + i), 1 + 0.3 * Math.sin(t * 13 + i * 2) + e * 0.3, 1 + 0.15 * Math.cos(t * 9 + i)); m.rotation.y = t * 2 + i; });
   const pos = sparks.g.attributes.position;
@@ -486,6 +575,7 @@ function poseOnam(t) {
   const wv = Math.sin(t * 3);
   baliO.rot('upperArm_R', 'z', -125 + wv * 6); baliO.rot('foreArm_R', 'z', -18 * wv); baliO.rot('upperArm_L', 'z', 14);
   baliO.rot('head', 'x', -6 + e * 3); baliO.rot('chest', 'x', Math.sin(t * 2.2) * 1.5);
+  alive(baliO, t, 5.0, e, 12);
   baliO.root.position.y = Math.abs(Math.sin(t * 2.2)) * 0.05;
   baliO.rig.apply();
   villagers.forEach(({ f, ph }) => { f.reset(); const w = Math.sin(t * 3.2 + ph); f.armL.rotation.set(-2.5 + w * 0.25, 0, -0.3); f.armR.rotation.set(-2.5 - w * 0.25, 0, 0.3); f.root.position.y = Math.abs(w) * 0.1; });
@@ -511,14 +601,14 @@ function overlays(t) {
   else if (t > T(10, 0.62)) { o = clamp01((t - T(10, 0.62)) / 0.9); txt = window.VAMANA_TITLES?.end ?? 'Happy Onam'; }
   titleEl.textContent = txt; titleEl.style.opacity = o;
   let f = 0;
-  for (const b of [B[5], B[7], B[9]]) f = Math.max(f, t < b ? smooth(clamp01((t - (b - 0.5)) / 0.5)) : 1 - smooth(clamp01((t - b) / 0.7)));
+  for (const b of [B[I(5)], B[I(7)], B[I(9)]]) f = Math.max(f, t < b ? smooth(clamp01((t - (b - 0.5)) / 0.5)) : 1 - smooth(clamp01((t - b) / 0.7)));
   flashEl.style.opacity = f;
 }
 
 // ================= frame =================
 function renderAt(t) {
   const e = envAt(t);
-  const set = t < B[5] ? 'hall1' : t < B[7] ? 'cosmos' : t < B[9] ? 'hall2' : 'onam';
+  const set = t < B[I(5)] ? 'hall1' : t < B[I(7)] ? 'cosmos' : t < B[I(9)] ? 'hall2' : 'onam';
   hall.visible = set === 'hall1' || set === 'hall2'; cosmos.visible = set === 'cosmos'; onam.visible = set === 'onam';
   if (hall.visible) poseHall(t, set === 'hall1' ? 1 : 2);
   if (cosmos.visible) poseCosmos(t);
@@ -533,7 +623,7 @@ function renderAt(t) {
 window.initScene = (tl, env, fps, total) => {
   TL = tl; SN = tl.sentences; envelope = env; FPS_ENV = fps; END = total; lastCapKey = '';
   B = SN.map((s, i) => (i + 1 < SN.length ? (s.end + SN[i + 1].start) / 2 : s.end));
-  if (SN.length < 11) throw new Error(`expected 11 sentences, got ${SN.length}`);
+  if (SN.length < 14) throw new Error(`expected 14 sentences, got ${SN.length}`);
   buildCameras();
   return true;
 };
