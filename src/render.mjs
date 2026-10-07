@@ -1,6 +1,6 @@
 // Step 2: render the Three.js scene frame-by-frame in headless Chromium and mux with the ElevenLabs audio.
-//   node src/render.mjs                 -> out/video.mp4
-//   node src/render.mjs --stills 2,6,14 -> out/still_<t>.png (quick visual check)
+//   node src/render.mjs <project>                 -> out/<project>/video.mp4
+//   node src/render.mjs <project> --stills 2,6,14 -> out/<project>/still_<t>.png (quick visual check)
 import { chromium } from 'playwright-core';
 import { createServer } from 'node:http';
 import { readFile } from 'node:fs/promises';
@@ -9,13 +9,16 @@ import { spawn, execFileSync } from 'node:child_process';
 import { extname, join, normalize } from 'node:path';
 
 const ROOT = process.cwd();
+const project = process.argv[2];
+if (!project || project.startsWith('--')) throw new Error('usage: node src/render.mjs <project> [--stills t1,t2,...]');
+const OUT = `out/${project}`;
 const FPS = 30, ENV_FPS = 30, TAIL = 1.2;
-const timeline = JSON.parse(readFileSync('out/timeline.json', 'utf8'));
+const timeline = JSON.parse(readFileSync(`${OUT}/timeline.json`, 'utf8'));
 const total = timeline.duration + TAIL;
 
 // Amplitude envelope of the narration (RMS per frame, normalised) so the 3D scene can react to the voice.
 function envelope() {
-  const pcm = execFileSync('ffmpeg', ['-v', 'error', '-i', 'out/narration.mp3', '-ac', '1', '-ar', '8000', '-f', 's16le', '-'], { maxBuffer: 1 << 28 });
+  const pcm = execFileSync('ffmpeg', ['-v', 'error', '-i', `${OUT}/narration.mp3`, '-ac', '1', '-ar', '8000', '-f', 's16le', '-'], { maxBuffer: 1 << 28 });
   const s = new Int16Array(pcm.buffer.slice(pcm.byteOffset, pcm.byteOffset + (pcm.length & ~1))), raw = [];
   for (let f = 0; ; f++) { // 8000 / ENV_FPS is fractional, so derive integer sample bounds per frame
     const a = Math.floor((f * 8000) / ENV_FPS), b = Math.floor(((f + 1) * 8000) / ENV_FPS);
@@ -29,7 +32,7 @@ function envelope() {
   return norm.map((v, i) => (v + (norm[i - 1] ?? v) + (norm[i + 1] ?? v)) / 3); // light smoothing
 }
 const env = envelope();
-writeFileSync('out/envelope.json', JSON.stringify(env));
+writeFileSync(`${OUT}/envelope.json`, JSON.stringify(env));
 
 const MIME = { '.html': 'text/html', '.js': 'text/javascript', '.json': 'application/json' };
 const server = createServer(async (req, res) => {
@@ -49,26 +52,34 @@ const browser = await chromium.launch({
 const page = await browser.newPage({ viewport: { width: 1280, height: 720 } });
 page.on('console', (m) => ['error', 'warning'].includes(m.type()) && console.log('[page]', m.text()));
 page.on('pageerror', (e) => console.log('[pageerror]', e.message));
-await page.goto(`http://localhost:${port}/src/scene.html`);
+await page.goto(`http://localhost:${port}/projects/${project}/scene.html`);
 await page.waitForFunction('window.__ready === true', null, { timeout: 120000 });
-await page.evaluate(([tl, e, f]) => window.initScene(tl, e, f), [timeline, env, ENV_FPS]);
+await page.evaluate(([tl, e, f, tot]) => window.initScene(tl, e, f, tot), [timeline, env, ENV_FPS, total]);
 
 const stillsArg = process.argv.indexOf('--stills');
 if (stillsArg > -1) {
   for (const t of process.argv[stillsArg + 1].split(',').map(Number)) {
     await page.evaluate((t) => window.renderAt(t), t);
-    await page.screenshot({ path: `out/still_${t}.png` });
+    await page.screenshot({ path: `${OUT}/still_${t}.png` });
     console.log('still', t);
   }
 } else {
   const n = Math.ceil(total * FPS);
+  // audio graph: narration + (looped) background bed + timed sound effects
+  const sfx = timeline.sfx ?? [];
+  const inputs = ['-i', `${OUT}/narration.mp3`, '-stream_loop', '-1', '-i', `${OUT}/ambience.mp3`, ...sfx.flatMap((fx) => ['-i', `${OUT}/${fx.file}`])];
+  const f = total.toFixed(2);
+  const graph = [
+    `[1:a]apad=pad_dur=${TAIL}[nar]`,
+    `[2:a]atrim=0:${f},asetpts=N/SR/TB,afade=t=in:d=1.5,afade=t=out:st=${(total - 2).toFixed(2)}:d=2,volume=${process.env.BED_VOLUME || 0.28}[bed]`,
+    ...sfx.map((fx, i) => `[${i + 3}:a]adelay=${Math.round(fx.at * 1000)}|${Math.round(fx.at * 1000)},volume=${fx.volume}[fx${i}]`),
+    `[nar][bed]${sfx.map((_, i) => `[fx${i}]`).join('')}amix=inputs=${2 + sfx.length}:duration=longest:normalize=0,atrim=0:${f}[aout]`,
+  ].join(';');
   const ff = spawn('ffmpeg', [
-    '-y', '-v', 'error', '-f', 'image2pipe', '-framerate', String(FPS), '-c:v', 'mjpeg', '-i', '-',
-    '-i', 'out/narration.mp3', '-i', 'out/ambience.mp3',
-    '-filter_complex',
-    `[1:a]apad=pad_dur=${TAIL},volume=1.0[v];[2:a]atrim=0:${total.toFixed(2)},afade=t=in:d=1.5,afade=t=out:st=${(total - 2).toFixed(2)}:d=2,volume=0.28[a];[v][a]amix=inputs=2:duration=longest:normalize=0[aout]`,
+    '-y', '-v', 'error', '-f', 'image2pipe', '-framerate', String(FPS), '-c:v', 'mjpeg', '-i', '-', ...inputs,
+    '-filter_complex', graph,
     '-map', '0:v', '-map', '[aout]', '-c:v', 'libx264', '-preset', 'medium', '-crf', '18', '-pix_fmt', 'yuv420p',
-    '-c:a', 'aac', '-b:a', '192k', '-t', total.toFixed(2), '-movflags', '+faststart', 'out/video.mp4',
+    '-c:a', 'aac', '-b:a', '192k', '-t', f, '-movflags', '+faststart', `${OUT}/video.mp4`,
   ], { stdio: ['pipe', 'inherit', 'inherit'] });
   const done = new Promise((r) => ff.on('close', r));
   const t0 = Date.now();

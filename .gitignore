@@ -1,5 +1,5 @@
 node_modules/
 out/frames/
-out/still_*.png
-out/envelope.json
-out/video.mp4
+out/*/still_*.png
+out/*/envelope.json
+out/*/video.mp4
