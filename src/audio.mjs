@@ -1,15 +1,17 @@
 // Step 1: generate narration (with word timestamps), background music and sound effects via ElevenLabs.
 //   VOICE_ID=<elevenlabs voice id> node src/audio.mjs <project>
-import { mkdirSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, writeFileSync } from 'node:fs';
 
 const KEY = process.env.ELEVENLABS_API_KEY;
 if (!KEY) throw new Error('ELEVENLABS_API_KEY is not set');
 const project = process.argv[2];
+const REUSE = process.argv.includes('--reuse'); // keep existing sfx/music files in out/<project> (they are language independent)
 if (!project) throw new Error('usage: node src/audio.mjs <project>');
 
 const VOICE_ID = process.env.VOICE_ID || 'JBFqnCBsd6RMkjVDRZzb'; // default: George (stock voice)
 const API = 'https://api.elevenlabs.io/v1';
-const { SCRIPT, AMBIENCE, SFX = [], EXPECT_SENTENCES } = await import(`../projects/${project}/script.mjs`);
+const { SCRIPT, AMBIENCE, SFX = [], EXPECT_SENTENCES, MODEL_ID = 'eleven_multilingual_v2', LANGUAGE_CODE, VOICE_SETTINGS = { stability: 0.5, similarity_boost: 0.75, style: 0.25 } } =
+  await import(`../projects/${project}/script.mjs`);
 const out = `out/${project}`;
 mkdirSync(out, { recursive: true });
 
@@ -27,8 +29,9 @@ async function post(path, body) {
 const tts = await (
   await post(`/text-to-speech/${VOICE_ID}/with-timestamps?output_format=mp3_44100_128`, {
     text: SCRIPT.join(' '),
-    model_id: 'eleven_multilingual_v2',
-    voice_settings: { stability: 0.5, similarity_boost: 0.75, style: 0.25 },
+    model_id: MODEL_ID,
+    ...(LANGUAGE_CODE ? { language_code: LANGUAGE_CODE } : {}),
+    voice_settings: VOICE_SETTINGS,
   })
 ).json();
 writeFileSync(`${out}/narration.mp3`, Buffer.from(tts.audio_base64, 'base64'));
@@ -61,9 +64,11 @@ if (EXPECT_SENTENCES && sentences.length !== EXPECT_SENTENCES) {
 // Sound effects, pinned to a point inside a sentence.
 const sfx = [];
 for (const fx of SFX) {
-  const res = await post('/sound-generation?output_format=mp3_44100_128', { text: fx.prompt, duration_seconds: fx.seconds, prompt_influence: 0.6 });
   const file = `sfx_${fx.key}.mp3`;
-  writeFileSync(`${out}/${file}`, Buffer.from(await res.arrayBuffer()));
+  if (!(REUSE && existsSync(`${out}/${file}`))) {
+    const res = await post('/sound-generation?output_format=mp3_44100_128', { text: fx.prompt, duration_seconds: fx.seconds, prompt_influence: 0.6 });
+    writeFileSync(`${out}/${file}`, Buffer.from(await res.arrayBuffer()));
+  }
   const [i, f] = fx.at, sn = sentences[i];
   sfx.push({ key: fx.key, file, at: sn.start + f * (sn.end - sn.start), volume: fx.volume ?? 1 });
   console.log(`sfx ${fx.key} @ ${sfx.at(-1).at.toFixed(2)}s`);
@@ -75,6 +80,7 @@ console.log(`narration: ${duration.toFixed(2)}s, ${words.length} words, ${senten
 // Background bed. Prefer the music endpoint (any length); fall back to a looped 30s sound-effect clip.
 const target = Math.ceil(duration + 3);
 let music = null;
+if (REUSE && existsSync(`${out}/ambience.mp3`)) { console.log('ambience: reusing existing file'); process.exit(0); }
 try {
   const res = await post('/music?output_format=mp3_44100_128', { prompt: AMBIENCE, music_length_ms: Math.max(10000, target * 1000), force_instrumental: true });
   music = Buffer.from(await res.arrayBuffer());

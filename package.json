@@ -18,6 +18,7 @@
   },
   "homepage": "https://github.com/CoderVLSI/3d-video#readme",
   "dependencies": {
+    "@fontsource/noto-sans-telugu": "^5.3.0",
     "playwright-core": "^1.63.0",
     "three": "^0.186.1"
   }
