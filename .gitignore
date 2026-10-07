@@ -1,5 +1,7 @@
 node_modules/
+out/*/frames/
 out/frames/
 out/*/still_*.png
+out/*/cmp*.png
 out/*/envelope.json
 out/*/video.mp4

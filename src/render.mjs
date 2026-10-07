@@ -5,7 +5,7 @@
 import { chromium } from 'playwright-core';
 import { createServer } from 'node:http';
 import { readFile } from 'node:fs/promises';
-import { mkdirSync, readdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, readdirSync, readFileSync, renameSync, rmSync, writeFileSync } from 'node:fs';
 import { spawn, execFileSync } from 'node:child_process';
 import { extname, join, normalize } from 'node:path';
 
@@ -68,7 +68,7 @@ const encodeArgs = (f) => ['-map', '0:v', '-map', '[aout]', '-c:v', 'libx264', '
 
 // Parallel mode: the supervisor starts one worker process per slice (each its own browser), then muxes the frames on disk.
 if (WORKERS > 1 && !SLICE && !argv.includes('--stills')) {
-  rmSync(FRAMES, { recursive: true, force: true }); mkdirSync(FRAMES, { recursive: true });
+  mkdirSync(FRAMES, { recursive: true });
   const t0 = Date.now();
   const codes = await Promise.all(Array.from({ length: WORKERS }, (_, i) => new Promise((resolve) => {
     const w = spawn(process.execPath, [argv[1], project, '--slice', `${i}/${WORKERS}`], { stdio: ['ignore', 'inherit', 'inherit'], env: process.env });
@@ -111,18 +111,20 @@ if (stillsArg > -1) {
     if (i % (n * 30) === k) console.log(`worker ${k}: frame ${i}/${NFRAMES}  ${((Date.now() - t0) / 1000).toFixed(0)}s`);
   }
 } else {
-  const n = NFRAMES, { inputs, graph, f } = audioArgs();
-  const ff = spawn('ffmpeg', ['-y', '-v', 'error', '-f', 'image2pipe', '-framerate', String(FPS), '-c:v', 'mjpeg', '-i', '-', ...inputs, '-filter_complex', graph, ...encodeArgs(f)], { stdio: ['pipe', 'inherit', 'inherit'] });
-  const done = new Promise((r) => ff.on('close', r));
-  const t0 = Date.now();
-  for (let i = 0; i < n; i++) {
+  // Resumable: frames are written to disk (atomically) and skipped when already present, so a restart loses almost nothing.
+  mkdirSync(FRAMES, { recursive: true });
+  const file = (i) => `${FRAMES}/${String(i + 1).padStart(5, '0')}.jpg`;
+  const t0 = Date.now(); let done = 0;
+  for (let i = 0; i < NFRAMES; i++) {
+    if (existsSync(file(i))) continue;
     await page.evaluate((t) => window.renderAt(t), i / FPS);
-    const jpg = await page.screenshot({ type: 'jpeg', quality: 95 });
-    if (!ff.stdin.write(jpg)) await new Promise((r) => ff.stdin.once('drain', r));
-    if (i % 30 === 0) console.log(`frame ${i}/${n}  ${((Date.now() - t0) / 1000).toFixed(0)}s`);
+    writeFileSync(`${file(i)}.tmp`, await page.screenshot({ type: 'jpeg', quality: 95 }));
+    renameSync(`${file(i)}.tmp`, file(i)); done++;
+    if (done % 30 === 1) console.log(`frame ${i}/${NFRAMES}  (${done} new, ${((Date.now() - t0) / 1000).toFixed(0)}s)`);
   }
-  ff.stdin.end();
-  const code = await done;
+  const { inputs, graph, f } = audioArgs();
+  const ff = spawn('ffmpeg', ['-y', '-v', 'error', '-framerate', String(FPS), '-i', `${FRAMES}/%05d.jpg`, ...inputs, '-filter_complex', graph, ...encodeArgs(f)], { stdio: 'inherit' });
+  const code = await new Promise((r) => ff.on('close', r));
   console.log('ffmpeg exit', code);
 }
 await browser.close();
