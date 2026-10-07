@@ -147,8 +147,8 @@ for (const [id, p] of Object.entries(PLANETS)) {
       const edge = smooth(clamp01(u * 8)) * smooth(clamp01((1 - u) * 6)), gap = u > 0.55 && u < 0.62 ? 0.15 : 1;
       return [225, 210, 185, 255 * edge * gap * clamp01(0.25 + n * 0.9)];
     });
-    const ring = new THREE.Mesh(rg, new THREE.MeshStandardMaterial({ map: ringTex, transparent: true, side: THREE.DoubleSide, roughness: 1, depthWrite: false }));
-    ring.rotation.x = Math.PI / 2; mesh.add(ring);
+    const ring = new THREE.Mesh(rg, new THREE.MeshStandardMaterial({ map: ringTex, emissive: 0xffffff, emissiveMap: ringTex, emissiveIntensity: 0.55, transparent: true, side: THREE.DoubleSide, roughness: 1, depthWrite: false }));
+    ring.rotation.set(Math.PI / 2 + 0.5, 0, 0.2); grp.add(ring); // on the group, not the spinning mesh, so the tilt stays fixed
   }
   scene.add(grp);
   // orbit line
@@ -197,10 +197,12 @@ function resolve(spec, t, out) {
   planetPos(spec.rel, t, out); return out.add(_b.set(...spec.off));
 }
 const camPos = new THREE.Vector3(), camLook = new THREE.Vector3();
+let S = 1; // narration length relative to the 25.12s the beat times below were authored against
 function placeCamera(t) {
-  let i = KEYS.findIndex((k) => k.t > t) - 1;
+  const tr = t / S;
+  let i = KEYS.findIndex((k) => k.t > tr) - 1;
   if (i < 0) i = KEYS.length - 2;
-  const k0 = KEYS[i], k1 = KEYS[i + 1], u = smooth(clamp01((t - k0.t) / (k1.t - k0.t)));
+  const k0 = KEYS[i], k1 = KEYS[i + 1], u = smooth(clamp01((tr - k0.t) / (k1.t - k0.t)));
   camPos.copy(resolve(k0.pos, t, _a)).lerp(resolve(k1.pos, t, new THREE.Vector3()), u);
   camLook.copy(resolve(k0.look, t, _a)).lerp(resolve(k1.look, t, new THREE.Vector3()), u);
   camPos.x += Math.sin(t * 0.7) * 0.15; camPos.y += Math.cos(t * 0.55) * 0.12; // gentle handheld drift
@@ -220,6 +222,7 @@ function captions(t) {
   capEl.innerHTML = s.words.map((w, i) => `<span class="${on[i] === '1' ? 'on' : ''}">${w.text}</span>`).join(' ');
 }
 function title(t) {
+  t /= S;
   const fadeIn = clamp01((t - 17.2) / 0.8), fadeOut = clamp01((t - 0.0) / 0.01);
   let o = 0, txt = '';
   if (t < 4.0) { o = Math.min(clamp01(t / 0.8), clamp01((4.0 - t) / 0.6)); txt = 'A Tiny Solar System'; }
@@ -246,7 +249,7 @@ function renderAt(t) {
   halo1.scale.setScalar(17 + env * 3.5); halo2.scale.setScalar(8 + env * 1.8);
   sunLight.intensity = 520 * (0.96 + env * 0.1);
   // voice ring
-  const vis = 0.5 + 0.5 * smooth(clamp01((t - 3.0) / 1.5));
+  const vis = 0.5 + 0.5 * smooth(clamp01((t / S - 3.0) / 1.5));
   for (let i = 0; i < BARS; i++) {
     const a = (i / BARS) * Math.PI * 2 + t * 0.12;
     const wob = 0.55 + 0.45 * Math.sin(i * 1.7 + t * 6.3) * Math.sin(i * 0.43 - t * 2.1);
@@ -262,6 +265,6 @@ function renderAt(t) {
   composer.render();
 }
 
-window.initScene = (tl, env, fps) => { timeline = tl; envelope = env; FPS_ENV = fps; lastCapKey = ''; return true; };
+window.initScene = (tl, env, fps) => { timeline = tl; S = tl.duration / 25.12; envelope = env; FPS_ENV = fps; lastCapKey = ''; return true; };
 window.renderAt = renderAt;
 window.__ready = true;
