@@ -8,5 +8,8 @@ export const SCRIPT = [
   'Three D motion, rendered frame by frame. Thanks for watching.',
 ];
 
+export const MODEL_ID = 'eleven_v4';
+export const LANGUAGE_CODE = 'en';
+
 export const AMBIENCE = 'Deep, calm cinematic space ambience, soft low synth drone with gentle shimmering high pads, no melody';
 export const SFX = [];

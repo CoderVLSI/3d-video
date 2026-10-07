@@ -1,8 +1,7 @@
 // Telugu narration for the Vamana video. Same 11-beat structure as projects/vamana: the scene is keyed to sentence
 // index, so keep exactly one terminal full stop per sentence.
-export const MODEL_ID = 'eleven_v3'; // multilingual_v2 does not cover Telugu
+export const MODEL_ID = 'eleven_v4'; // the cloned voice only sounds right on v4; multilingual_v2 does not cover Telugu
 export const LANGUAGE_CODE = 'te';
-export const VOICE_SETTINGS = { stability: 0.5, similarity_boost: 0.75 };
 
 export const SCRIPT = [
   'చాలా కాలం క్రితం, శక్తిమంతుడైన బలి చక్రవర్తి మూడు లోకాలను జయించాడు, దేవతలు కూడా భయపడ్డారు.',

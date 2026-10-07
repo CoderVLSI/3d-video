@@ -1,5 +1,5 @@
 {
-  "duration": 25.589,
+  "duration": 27.68,
   "sentences": [
     {
       "start": 0,
@@ -7,649 +7,650 @@
         {
           "text": "Welcome",
           "start": 0,
-          "end": 0.685
+          "end": 0.48
         },
         {
           "text": "to",
-          "start": 0.731,
-          "end": 0.801
+          "start": 0.56,
+          "end": 0.64
         },
         {
           "text": "a",
-          "start": 0.871,
-          "end": 0.906
+          "start": 0.72,
+          "end": 0.88
         },
         {
           "text": "tiny",
-          "start": 0.998,
-          "end": 1.324
+          "start": 1.12,
+          "end": 1.36
         },
         {
           "text": "solar",
-          "start": 1.37,
-          "end": 1.707
+          "start": 1.44,
+          "end": 1.76
         },
         {
           "text": "system,",
-          "start": 1.765,
-          "end": 2.345
+          "start": 1.84,
+          "end": 2.64
         },
         {
           "text": "built",
-          "start": 2.496,
-          "end": 2.81
+          "start": 2.72,
+          "end": 2.96
         },
         {
           "text": "entirely",
-          "start": 2.879,
-          "end": 3.541
+          "start": 3.04,
+          "end": 3.84
         },
         {
           "text": "from",
-          "start": 3.599,
-          "end": 3.785
+          "start": 3.92,
+          "end": 4.08
         },
         {
           "text": "code.",
-          "start": 3.878,
-          "end": 4.284
+          "start": 4.24,
+          "end": 4.92
         }
       ],
-      "end": 4.284
+      "end": 4.92
     },
     {
-      "start": 4.493,
+      "start": 5.2,
       "words": [
         {
           "text": "At",
-          "start": 4.493,
-          "end": 4.656
+          "start": 5.2,
+          "end": 5.28
         },
         {
           "text": "the",
-          "start": 4.702,
-          "end": 4.783
+          "start": 5.36,
+          "end": 5.44
         },
         {
           "text": "center",
-          "start": 4.83,
-          "end": 5.294
+          "start": 5.52,
+          "end": 5.92
         },
         {
           "text": "burns",
-          "start": 5.422,
-          "end": 5.782
+          "start": 6.08,
+          "end": 6.4
         },
         {
           "text": "a",
-          "start": 5.863,
-          "end": 5.921
+          "start": 6.44,
+          "end": 6.48
         },
         {
           "text": "star,",
-          "start": 6.002,
-          "end": 6.513
+          "start": 6.56,
+          "end": 7.44
         },
         {
           "text": "pouring",
-          "start": 6.641,
-          "end": 7.047
+          "start": 7.56,
+          "end": 7.84
         },
         {
           "text": "light",
-          "start": 7.129,
-          "end": 7.407
+          "start": 7.92,
+          "end": 8.24
         },
         {
           "text": "across",
-          "start": 7.465,
-          "end": 7.872
+          "start": 8.4,
+          "end": 8.8
         },
         {
           "text": "the",
-          "start": 7.918,
-          "end": 7.988
+          "start": 8.84,
+          "end": 8.88
         },
         {
           "text": "dark.",
-          "start": 8.034,
-          "end": 8.464
+          "start": 8.96,
+          "end": 9.68
         }
       ],
-      "end": 8.464
+      "end": 9.68
     },
     {
-      "start": 8.673,
+      "start": 9.92,
       "words": [
         {
           "text": "Around",
-          "start": 8.673,
-          "end": 9.102
+          "start": 9.92,
+          "end": 10.32
         },
         {
           "text": "it,",
-          "start": 9.172,
-          "end": 9.451
+          "start": 10.44,
+          "end": 10.88
         },
         {
           "text": "worlds",
-          "start": 9.625,
-          "end": 10.089
+          "start": 10.96,
+          "end": 11.4
         },
         {
           "text": "trace",
-          "start": 10.159,
-          "end": 10.472
+          "start": 11.44,
+          "end": 11.76
         },
         {
           "text": "their",
-          "start": 10.519,
-          "end": 10.681
+          "start": 11.84,
+          "end": 12
         },
         {
           "text": "paths",
-          "start": 10.751,
-          "end": 11.157
+          "start": 12.24,
+          "end": 12.48
         },
         {
           "text": "in",
-          "start": 11.215,
-          "end": 11.331
+          "start": 12.56,
+          "end": 12.8
         },
         {
           "text": "endless,",
-          "start": 11.459,
-          "end": 11.923
+          "start": 12.88,
+          "end": 13.52
         },
         {
           "text": "quiet",
-          "start": 11.97,
-          "end": 12.353
+          "start": 13.6,
+          "end": 14
         },
         {
           "text": "orbits.",
-          "start": 12.434,
-          "end": 13.038
+          "start": 14.08,
+          "end": 14.88
         }
       ],
-      "end": 13.038
+      "end": 14.88
     },
     {
-      "start": 13.282,
+      "start": 15.12,
       "words": [
         {
           "text": "One",
-          "start": 13.282,
-          "end": 13.584
+          "start": 15.12,
+          "end": 15.36
         },
         {
           "text": "wears",
-          "start": 13.63,
-          "end": 13.99
+          "start": 15.44,
+          "end": 15.68
         },
         {
           "text": "rings",
-          "start": 14.164,
-          "end": 14.512
+          "start": 15.76,
+          "end": 16.08
         },
         {
           "text": "of",
-          "start": 14.571,
-          "end": 14.675
+          "start": 16.2,
+          "end": 16.32
         },
         {
           "text": "ice",
-          "start": 14.849,
-          "end": 15.197
+          "start": 16.4,
+          "end": 16.72
         },
         {
           "text": "and",
-          "start": 15.244,
-          "end": 15.418
+          "start": 16.8,
+          "end": 16.88
         },
         {
           "text": "dust,",
-          "start": 15.511,
-          "end": 15.906
+          "start": 16.96,
+          "end": 17.68
         },
         {
           "text": "glittering",
-          "start": 16.115,
-          "end": 16.718
+          "start": 17.76,
+          "end": 18.32
         },
         {
           "text": "as",
-          "start": 16.834,
-          "end": 16.997
+          "start": 18.4,
+          "end": 18.48
         },
         {
           "text": "it",
-          "start": 17.078,
-          "end": 17.171
+          "start": 18.56,
+          "end": 18.64
         },
         {
           "text": "turns.",
-          "start": 17.218,
-          "end": 17.81
+          "start": 18.72,
+          "end": 19.52
         }
       ],
-      "end": 17.81
+      "end": 19.52
     },
     {
-      "start": 17.984,
+      "start": 19.76,
       "words": [
         {
           "text": "And",
-          "start": 17.984,
-          "end": 18.123
+          "start": 19.76,
+          "end": 19.84
         },
         {
           "text": "the",
-          "start": 18.17,
-          "end": 18.24
+          "start": 19.92,
+          "end": 19.96
         },
         {
           "text": "voice",
-          "start": 18.286,
-          "end": 18.576
+          "start": 20,
+          "end": 20.24
         },
         {
           "text": "you",
-          "start": 18.623,
-          "end": 18.727
+          "start": 20.32,
+          "end": 20.4
         },
         {
           "text": "hear?",
-          "start": 18.843,
-          "end": 19.366
+          "start": 20.52,
+          "end": 20.72
         }
       ],
-      "end": 19.366
+      "end": 20.72
     },
     {
-      "start": 19.61,
+      "start": 21.2,
       "words": [
         {
           "text": "Generated",
-          "start": 19.61,
-          "end": 20.353
+          "start": 21.2,
+          "end": 21.68
         },
         {
           "text": "by",
-          "start": 20.434,
-          "end": 20.724
+          "start": 21.84,
+          "end": 22
         },
         {
           "text": "ElevenLabs.",
-          "start": 20.84,
-          "end": 21.723
+          "start": 22.16,
+          "end": 23.36
         }
       ],
-      "end": 21.723
+      "end": 23.36
     },
     {
-      "start": 21.897,
+      "start": 23.44,
       "words": [
         {
           "text": "Three",
-          "start": 21.897,
-          "end": 22.175
+          "start": 23.44,
+          "end": 23.52
         },
         {
           "text": "D",
-          "start": 22.21,
-          "end": 22.233
+          "start": 23.6,
+          "end": 23.68
         },
         {
           "text": "motion,",
-          "start": 22.349,
-          "end": 22.872
+          "start": 23.76,
+          "end": 24.48
         },
         {
           "text": "rendered",
-          "start": 22.988,
-          "end": 23.36
+          "start": 24.56,
+          "end": 24.96
         },
         {
           "text": "frame",
-          "start": 23.418,
-          "end": 23.685
+          "start": 25.04,
+          "end": 25.36
         },
         {
           "text": "by",
-          "start": 23.731,
-          "end": 23.87
+          "start": 25.44,
+          "end": 25.68
         },
         {
           "text": "frame.",
-          "start": 23.952,
-          "end": 24.323
+          "start": 25.88,
+          "end": 26.48
         }
       ],
-      "end": 24.323
+      "end": 26.48
     },
     {
-      "start": 24.451,
+      "start": 26.6,
       "words": [
         {
           "text": "Thanks",
-          "start": 24.451,
-          "end": 24.741
+          "start": 26.6,
+          "end": 26.72
         },
         {
           "text": "for",
-          "start": 24.776,
-          "end": 24.892
+          "start": 26.8,
+          "end": 26.88
         },
         {
           "text": "watching.",
-          "start": 24.95,
-          "end": 25.589
+          "start": 27,
+          "end": 27.68
         }
       ],
-      "end": 25.589
+      "end": 27.68
     }
   ],
   "words": [
     {
       "text": "Welcome",
       "start": 0,
-      "end": 0.685
+      "end": 0.48
     },
     {
       "text": "to",
-      "start": 0.731,
-      "end": 0.801
+      "start": 0.56,
+      "end": 0.64
     },
     {
       "text": "a",
-      "start": 0.871,
-      "end": 0.906
+      "start": 0.72,
+      "end": 0.88
     },
     {
       "text": "tiny",
-      "start": 0.998,
-      "end": 1.324
+      "start": 1.12,
+      "end": 1.36
     },
     {
       "text": "solar",
-      "start": 1.37,
-      "end": 1.707
+      "start": 1.44,
+      "end": 1.76
     },
     {
       "text": "system,",
-      "start": 1.765,
-      "end": 2.345
+      "start": 1.84,
+      "end": 2.64
     },
     {
       "text": "built",
-      "start": 2.496,
-      "end": 2.81
+      "start": 2.72,
+      "end": 2.96
     },
     {
       "text": "entirely",
-      "start": 2.879,
-      "end": 3.541
+      "start": 3.04,
+      "end": 3.84
     },
     {
       "text": "from",
-      "start": 3.599,
-      "end": 3.785
+      "start": 3.92,
+      "end": 4.08
     },
     {
       "text": "code.",
-      "start": 3.878,
-      "end": 4.284
+      "start": 4.24,
+      "end": 4.92
     },
     {
       "text": "At",
-      "start": 4.493,
-      "end": 4.656
+      "start": 5.2,
+      "end": 5.28
     },
     {
       "text": "the",
-      "start": 4.702,
-      "end": 4.783
+      "start": 5.36,
+      "end": 5.44
     },
     {
       "text": "center",
-      "start": 4.83,
-      "end": 5.294
+      "start": 5.52,
+      "end": 5.92
     },
     {
       "text": "burns",
-      "start": 5.422,
-      "end": 5.782
+      "start": 6.08,
+      "end": 6.4
     },
     {
       "text": "a",
-      "start": 5.863,
-      "end": 5.921
+      "start": 6.44,
+      "end": 6.48
     },
     {
       "text": "star,",
-      "start": 6.002,
-      "end": 6.513
+      "start": 6.56,
+      "end": 7.44
     },
     {
       "text": "pouring",
-      "start": 6.641,
-      "end": 7.047
+      "start": 7.56,
+      "end": 7.84
     },
     {
       "text": "light",
-      "start": 7.129,
-      "end": 7.407
+      "start": 7.92,
+      "end": 8.24
     },
     {
       "text": "across",
-      "start": 7.465,
-      "end": 7.872
+      "start": 8.4,
+      "end": 8.8
     },
     {
       "text": "the",
-      "start": 7.918,
-      "end": 7.988
+      "start": 8.84,
+      "end": 8.88
     },
     {
       "text": "dark.",
-      "start": 8.034,
-      "end": 8.464
+      "start": 8.96,
+      "end": 9.68
     },
     {
       "text": "Around",
-      "start": 8.673,
-      "end": 9.102
+      "start": 9.92,
+      "end": 10.32
     },
     {
       "text": "it,",
-      "start": 9.172,
-      "end": 9.451
+      "start": 10.44,
+      "end": 10.88
     },
     {
       "text": "worlds",
-      "start": 9.625,
-      "end": 10.089
+      "start": 10.96,
+      "end": 11.4
     },
     {
       "text": "trace",
-      "start": 10.159,
-      "end": 10.472
+      "start": 11.44,
+      "end": 11.76
     },
     {
       "text": "their",
-      "start": 10.519,
-      "end": 10.681
+      "start": 11.84,
+      "end": 12
     },
     {
       "text": "paths",
-      "start": 10.751,
-      "end": 11.157
+      "start": 12.24,
+      "end": 12.48
     },
     {
       "text": "in",
-      "start": 11.215,
-      "end": 11.331
+      "start": 12.56,
+      "end": 12.8
     },
     {
       "text": "endless,",
-      "start": 11.459,
-      "end": 11.923
+      "start": 12.88,
+      "end": 13.52
     },
     {
       "text": "quiet",
-      "start": 11.97,
-      "end": 12.353
+      "start": 13.6,
+      "end": 14
     },
     {
       "text": "orbits.",
-      "start": 12.434,
-      "end": 13.038
+      "start": 14.08,
+      "end": 14.88
     },
     {
       "text": "One",
-      "start": 13.282,
-      "end": 13.584
+      "start": 15.12,
+      "end": 15.36
     },
     {
       "text": "wears",
-      "start": 13.63,
-      "end": 13.99
+      "start": 15.44,
+      "end": 15.68
     },
     {
       "text": "rings",
-      "start": 14.164,
-      "end": 14.512
+      "start": 15.76,
+      "end": 16.08
     },
     {
       "text": "of",
-      "start": 14.571,
-      "end": 14.675
+      "start": 16.2,
+      "end": 16.32
     },
     {
       "text": "ice",
-      "start": 14.849,
-      "end": 15.197
+      "start": 16.4,
+      "end": 16.72
     },
     {
       "text": "and",
-      "start": 15.244,
-      "end": 15.418
+      "start": 16.8,
+      "end": 16.88
     },
     {
       "text": "dust,",
-      "start": 15.511,
-      "end": 15.906
+      "start": 16.96,
+      "end": 17.68
     },
     {
       "text": "glittering",
-      "start": 16.115,
-      "end": 16.718
+      "start": 17.76,
+      "end": 18.32
     },
     {
       "text": "as",
-      "start": 16.834,
-      "end": 16.997
+      "start": 18.4,
+      "end": 18.48
     },
     {
       "text": "it",
-      "start": 17.078,
-      "end": 17.171
+      "start": 18.56,
+      "end": 18.64
     },
     {
       "text": "turns.",
-      "start": 17.218,
-      "end": 17.81
+      "start": 18.72,
+      "end": 19.52
     },
     {
       "text": "And",
-      "start": 17.984,
-      "end": 18.123
+      "start": 19.76,
+      "end": 19.84
     },
     {
       "text": "the",
-      "start": 18.17,
-      "end": 18.24
+      "start": 19.92,
+      "end": 19.96
     },
     {
       "text": "voice",
-      "start": 18.286,
-      "end": 18.576
+      "start": 20,
+      "end": 20.24
     },
     {
       "text": "you",
-      "start": 18.623,
-      "end": 18.727
+      "start": 20.32,
+      "end": 20.4
     },
     {
       "text": "hear?",
-      "start": 18.843,
-      "end": 19.366
+      "start": 20.52,
+      "end": 20.72
     },
     {
       "text": "Generated",
-      "start": 19.61,
-      "end": 20.353
+      "start": 21.2,
+      "end": 21.68
     },
     {
       "text": "by",
-      "start": 20.434,
-      "end": 20.724
+      "start": 21.84,
+      "end": 22
     },
     {
       "text": "ElevenLabs.",
-      "start": 20.84,
-      "end": 21.723
-    },
-    {
-      "text": "Three",
-      "start": 21.897,
-      "end": 22.175
-    },
-    {
-      "text": "D",
-      "start": 22.21,
-      "end": 22.233
-    },
-    {
-      "text": "motion,",
-      "start": 22.349,
-      "end": 22.872
-    },
-    {
-      "text": "rendered",
-      "start": 22.988,
+      "start": 22.16,
       "end": 23.36
     },
     {
+      "text": "Three",
+      "start": 23.44,
+      "end": 23.52
+    },
+    {
+      "text": "D",
+      "start": 23.6,
+      "end": 23.68
+    },
+    {
+      "text": "motion,",
+      "start": 23.76,
+      "end": 24.48
+    },
+    {
+      "text": "rendered",
+      "start": 24.56,
+      "end": 24.96
+    },
+    {
       "text": "frame",
-      "start": 23.418,
-      "end": 23.685
+      "start": 25.04,
+      "end": 25.36
     },
     {
       "text": "by",
-      "start": 23.731,
-      "end": 23.87
+      "start": 25.44,
+      "end": 25.68
     },
     {
       "text": "frame.",
-      "start": 23.952,
-      "end": 24.323
+      "start": 25.88,
+      "end": 26.48
     },
     {
       "text": "Thanks",
-      "start": 24.451,
-      "end": 24.741
+      "start": 26.6,
+      "end": 26.72
     },
     {
       "text": "for",
-      "start": 24.776,
-      "end": 24.892
+      "start": 26.8,
+      "end": 26.88
     },
     {
       "text": "watching.",
-      "start": 24.95,
-      "end": 25.589
+      "start": 27,
+      "end": 27.68
     }
-  ]
+  ],
+  "sfx": []
 }

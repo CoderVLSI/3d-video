@@ -14,6 +14,9 @@ export const SCRIPT = [
   'And each year, Bali returns to visit his people, a day we celebrate as Onam.',
 ];
 
+export const MODEL_ID = 'eleven_v4';
+export const LANGUAGE_CODE = 'en';
+
 export const AMBIENCE =
   'Calm devotional Indian ambience, soft tanpura drone, gentle temple bells and a distant bamboo flute, warm and reverent, no vocals';
 

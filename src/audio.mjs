@@ -10,7 +10,7 @@ if (!project) throw new Error('usage: node src/audio.mjs <project>');
 
 const VOICE_ID = process.env.VOICE_ID || 'JBFqnCBsd6RMkjVDRZzb'; // default: George (stock voice)
 const API = 'https://api.elevenlabs.io/v1';
-const { SCRIPT, AMBIENCE, SFX = [], EXPECT_SENTENCES, MODEL_ID = 'eleven_multilingual_v2', LANGUAGE_CODE, VOICE_SETTINGS = { stability: 0.5, similarity_boost: 0.75, style: 0.25 } } =
+const { SCRIPT, AMBIENCE, SFX = [], EXPECT_SENTENCES, MODEL_ID = 'eleven_v4', LANGUAGE_CODE, VOICE_SETTINGS } =
   await import(`../projects/${project}/script.mjs`);
 const out = `out/${project}`;
 mkdirSync(out, { recursive: true });
@@ -31,7 +31,8 @@ const tts = await (
     text: SCRIPT.join(' '),
     model_id: MODEL_ID,
     ...(LANGUAGE_CODE ? { language_code: LANGUAGE_CODE } : {}),
-    voice_settings: VOICE_SETTINGS,
+    // no voice_settings by default: the voice's own saved settings apply, like on the ElevenLabs website (cloned voices sound closest this way)
+    ...(VOICE_SETTINGS ? { voice_settings: VOICE_SETTINGS } : {}),
   })
 ).json();
 writeFileSync(`${out}/narration.mp3`, Buffer.from(tts.audio_base64, 'base64'));
