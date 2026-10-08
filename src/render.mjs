@@ -84,10 +84,19 @@ if (WORKERS > 1 && !SLICE && !argv.includes('--stills')) {
   rmSync(FRAMES, { recursive: true, force: true }); server.close(); process.exit(code);
 }
 
-const browser = await chromium.launch({
-  executablePath: process.env.CHROMIUM_PATH || undefined,
-  args: ['--use-angle=swiftshader', '--use-gl=angle', '--enable-unsafe-swiftshader', '--ignore-gpu-blocklist', '--enable-webgl'],
-});
+// --gpu: use the machine's real GPU (new headless mode, hardware ANGLE backend). Default: software GL (SwiftShader), which works anywhere.
+// Untested on real hardware so far (the cloud container has no GPU); use --check-gpu to see which renderer WebGL picked.
+const GPU = process.argv.includes('--gpu') || process.argv.includes('--check-gpu');
+const ANGLE = { win32: 'd3d11', darwin: 'metal', linux: 'vulkan' }[process.platform];
+const browser = await chromium.launch(GPU
+  ? { channel: process.env.CHROMIUM_CHANNEL || 'chromium', executablePath: process.env.CHROMIUM_PATH || undefined, args: [`--use-angle=${ANGLE}`, '--ignore-gpu-blocklist', '--enable-gpu-rasterization', '--enable-webgl'] }
+  : { executablePath: process.env.CHROMIUM_PATH || undefined, args: ['--use-angle=swiftshader', '--use-gl=angle', '--enable-unsafe-swiftshader', '--ignore-gpu-blocklist', '--enable-webgl'] });
+if (process.argv.includes('--check-gpu')) {
+  const p = await browser.newPage();
+  const info = await p.evaluate(() => { const gl = document.createElement('canvas').getContext('webgl2'); const d = gl && gl.getExtension('WEBGL_debug_renderer_info'); return d ? gl.getParameter(d.UNMASKED_RENDERER_WEBGL) : 'no WebGL2'; });
+  console.log('WebGL renderer:', info, /swiftshader|software|llvmpipe/i.test(info) ? '  <-- NOT using the GPU' : '  <-- GPU OK');
+  await browser.close(); process.exit(0);
+}
 const page = await browser.newPage({ viewport: { width: 1280, height: 720 } });
 page.on('console', (m) => ['error', 'warning'].includes(m.type()) && console.log('[page]', m.text()));
 page.on('pageerror', (e) => console.log('[pageerror]', e.message));
