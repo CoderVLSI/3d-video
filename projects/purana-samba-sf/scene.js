@@ -6,6 +6,7 @@ import { OutputPass } from 'three/addons/postprocessing/OutputPass.js';
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
 import { rng, fbm, mix, makeTexture, smooth, clamp01, lerp, glowTexture, skyDome } from '/src/common.js';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+import * as SkeletonUtils from 'three/addons/utils/SkeletonUtils.js';
 import { loadRigged, makeActor } from '/src/rigged.js';
 
 const W = 1280, H = 720;
@@ -37,7 +38,7 @@ const SH = 2.0, DH = 2.3;             // heights
 const faceTo = (root, x, z) => { root.rotation.y = Math.atan2(x - root.position.x, z - root.position.z); };
 
 // Sketchfab props (see docs/sketchfab-credits.md): scaled to a target height, centred on x/z, base on y=0.
-const loadProp = async (file, height, tint) => {
+const loadProp = async (file, height, tint, dropBase = false) => {
   const g = (await new GLTFLoader().loadAsync(`/assets/models/sf/${file}`)).scene, holder = new THREE.Group(); holder.add(g);
   const size = new THREE.Box3().setFromObject(g).getSize(new THREE.Vector3()); g.scale.setScalar(height / size.y); g.updateMatrixWorld(true);
   const box = new THREE.Box3().setFromObject(g), c = box.getCenter(new THREE.Vector3()); g.position.set(-c.x, -box.min.y, -c.z);
@@ -45,12 +46,14 @@ const loadProp = async (file, height, tint) => {
   g.traverse((o) => { // drop flat display plates that ship with some scans
     if (!o.isMesh) return; const b = new THREE.Box3().setFromObject(o).getSize(new THREE.Vector3());
     if (b.y < 0.04 * all.y && Math.max(b.x, b.z) > 0.8 * Math.max(all.x, all.z)) flat.push(o);
+    else if (dropBase && b.y < 0.12 * all.y && Math.max(b.x, b.z) > 0.45 * all.y * 0.35) { const bb = new THREE.Box3().setFromObject(o); if (bb.max.y < 0.14 * all.y + new THREE.Box3().setFromObject(g).min.y) flat.push(o); }
   });
   flat.forEach((o) => o.parent.remove(o));
   g.traverse((o) => { if (o.isMesh) { o.castShadow = o.receiveShadow = true; if (o.material) { o.material = o.material.clone(); o.material.side = THREE.DoubleSide; if (tint) o.material.color.set(tint); } } });
   return holder;
 };
-const [gopuramM, templeM, suryaM] = await Promise.all([loadProp('gopuram.glb', 17, 0xffd9a0), loadProp('temple.glb', 11, 0xffe6c8), loadProp('surya_statue.glb', 1.9)]);
+const [gopuramM, templeM, suryaM, krishnaM, sunM, vaidyaAM, vaidyaBM] = await Promise.all([loadProp('gopuram.glb', 17, 0xffd9a0), loadProp('temple.glb', 11, 0xffe6c8), loadProp('surya_statue.glb', 1.9), loadProp('krishna_nb.glb', 2.35), loadProp('sun_face.glb', 6), loadProp('vaidya_a.glb', 2.0), loadProp('vaidya_b.glb', 1.95)]);
+const dup = (o) => SkeletonUtils.clone(o);
 
 // ---------------- set A: Dwaraka plaza ----------------
 const A = new THREE.Group(); scene.add(A);
@@ -65,13 +68,18 @@ const stone = makeTexture(256, 256, (u, v) => { const n = fbm(u, v, 12, 6, 5), c
   // palace backdrop: stepped base, hall, golden dome and spire
   for (let i = 0; i < 4; i++) { const s = new THREE.Mesh(new THREE.BoxGeometry(40 - i * 4, 0.5, 14 - i * 1.5), wall); s.position.set(0, 0.25 + i * 0.5, -16 - i * 0.2); s.castShadow = s.receiveShadow = true; A.add(s); }
   gopuramM.position.set(0, 0, -36); A.add(gopuramM);
-  for (const sx of [-1, 1]) { const t = templeM.clone(true); t.position.set(sx * 24, 0, -20); t.rotation.y = sx * -0.6; A.add(t); }
+  for (const sx of [-1, 1]) { const t = dup(templeM); t.position.set(sx * 24, 0, -20); t.rotation.y = sx * -0.6; A.add(t); }
   for (const x of [-9, -4.5, 4.5, 9]) { const p = new THREE.Mesh(new THREE.CylinderGeometry(0.4, 0.5, 5, 16), wall); p.position.set(x, 2.5, 4.5); p.castShadow = true; A.add(p); const t = new THREE.Mesh(new THREE.SphereGeometry(0.45, 14, 10), gold); t.position.set(x, 5.2, 4.5); A.add(t); }
   const sun = new THREE.DirectionalLight(0xffe6c0, 2.2); sun.position.set(-14, 22, 12); sun.castShadow = true; sun.shadow.mapSize.set(2048, 2048);
   Object.assign(sun.shadow.camera, { left: -16, right: 16, top: 16, bottom: -16, near: 1, far: 70 }); A.add(sun);
   A.add(new THREE.HemisphereLight(0xbcd6f5, 0x6a5a44, 0.55));
 }
 A.add(durvasa.root); scene.add(samba.root);
+// the vaidyas (court physicians) who fail to cure Samba, and Lord Krishna who advises him
+const VAI = [dup(vaidyaAM), dup(vaidyaAM), dup(vaidyaAM)], VAI_HOME = [[-1.9, 1.3], [2.2, 1.0], [-0.2, -0.5]], VAI_FROM = [[-9, 2], [9, 1], [0, -12]];
+VAI[1].scale.setScalar(0.94); VAI[2].scale.setScalar(0.98); VAI.forEach((v) => { v.visible = false; A.add(v); });
+const krishna = dup(krishnaM); krishna.visible = false; A.add(krishna);
+const krishnaGlow = glowSprite(A, 0xffe0a0, 7, 0, [-1.7, 1.4, 0.6]);
 const curseFlash = glowSprite(A, 0xff5a30, 9, 0, [0, 2, 0]);
 
 // ---------------- set B: the Chandrabhaga river at Mitravana ----------------
@@ -111,7 +119,7 @@ B.add(new THREE.HemisphereLight(0xaab8ff, 0x3a4a30, 0.9));
 const idol = new THREE.Group();
 {
   const goldM = new THREE.MeshStandardMaterial({ color: 0xe8a838, roughness: 0.35, metalness: 0.85, emissive: 0xff9a30, emissiveIntensity: 0.7 });
-  const statue = suryaM.clone(true); statue.traverse((o) => { if (o.isMesh) o.material = goldM; });
+  const statue = dup(suryaM); statue.traverse((o) => { if (o.isMesh) o.material = goldM; });
   const ring = new THREE.Mesh(new THREE.TorusGeometry(0.62, 0.04, 8, 28), new THREE.MeshBasicMaterial({ color: 0xffe8a0 })); ring.position.y = 1.5; ring.rotation.y = Math.PI / 2;
   const halo = new THREE.Mesh(new THREE.CircleGeometry(0.95, 40), new THREE.MeshBasicMaterial({ color: 0xffe08a, transparent: true, opacity: 0.45, side: THREE.DoubleSide })); halo.position.set(0, 1.5, -0.2);
   idol.add(statue, ring, halo); glowSprite(idol, 0xffc060, 4.5, 0.8, [0, 1.1, 0]);
@@ -120,8 +128,8 @@ B.add(idol);
 // temple on the bank (rises in sentence 8/9)
 const temple = new THREE.Group(); B.add(temple);
 {
-  temple.add(templeM.clone(true));
-  const disc = new THREE.Mesh(new THREE.CircleGeometry(1.2, 40), new THREE.MeshBasicMaterial({ color: 0xffd070, side: THREE.DoubleSide })); disc.position.set(0, 4.0, 3.4); temple.add(disc);
+  temple.add(dup(templeM));
+  const disc = dup(sunM); disc.scale.setScalar(0.5); disc.position.set(0, 3.0, 3.4); temple.add(disc);
   glowSprite(temple, 0xffc060, 10, 0.6, [0, 4.2, 3.8]);
   temple.position.set(-RIVER_W / 2 - 11, 0.35, -6); temple.rotation.y = Math.PI / 2; temple.visible = false;
 }
@@ -136,6 +144,7 @@ for (let i = 0; i < 14; i++) {
   m.position.set(0, 0, 0); m.rotation.z = (i / 14) * Math.PI * 2; m.position.set(Math.sin(m.rotation.z) * -4.5, Math.cos(m.rotation.z) * 4.5, 0); rays.add(m);
 }
 B.add(surya.root);
+const sunEmblem = dup(sunM); sunEmblem.visible = false; B.add(sunEmblem);
 
 // ---------------- timeline ----------------
 let SN, END, envelope = [], FPS_ENV = 30, lastCapKey = '';
@@ -247,6 +256,17 @@ function poseA(t, e) {
   }
   durvasa.root.position.copy(durPos);
   durvasa.rig.apply();
+  // vaidyas shake their heads over Samba (sentence 5), then leave as Krishna arrives
+  const vaiOn = t >= T(4, 0) - 0.05 && t < T(5, 0.12), va = smooth(prog(t, T(4, 0), T(4, 0.35)));
+  VAI.forEach((v, i) => {
+    v.visible = vaiOn; v.position.set(lerp(VAI_FROM[i][0], VAI_HOME[i][0], va), Math.abs(Math.sin(t * 2.2 + i)) * 0.012, lerp(VAI_FROM[i][1], VAI_HOME[i][1], va));
+    faceTo(v, sambaPos.x, sambaPos.z); v.rotation.y += Math.sin(t * 3.2 + i * 2) * 0.2 * va;
+  });
+  // Krishna appears in a soft golden light for sentence 6
+  const kr = smooth(prog(t, T(5, 0), T(5, 0.12)));
+  krishna.visible = t >= T(5, 0) - 0.02; krishna.scale.setScalar(0.4 + 0.6 * kr); krishna.position.set(-1.2, 0, 1.0);
+  faceTo(krishna, sambaPos.x, sambaPos.z); krishna.rotation.y += Math.sin(t * 1.3) * 0.05; krishna.position.y = Math.sin(t * 1.6) * 0.01;
+  krishnaGlow.material.opacity = krishna.visible ? 0.55 * Math.max(0, 1 - prog(t, T(5, 0.1), T(5, 0.6))) + 0.12 : 0; krishnaGlow.position.set(-1.7, 1.4, 0.6);
   // flash
   const fl = Math.max(0, 1 - Math.abs(t - curse) / 0.4);
   curseFlash.material.opacity = fl * 0.9; curseFlash.position.set(durPos.x * 0.5 + sambaPos.x * 0.5, 2.2, durPos.z * 0.5 + sambaPos.z * 0.5);
@@ -291,6 +311,7 @@ function poseB(t, e) {
   surya.root.rotation.y = 0;
   surya.rot('upperArm_L', 'z', 28 * des); surya.rot('upperArm_R', 'z', -28 * des); surya.rot('foreArm_L', 'x', -34 * des); surya.rot('foreArm_R', 'x', -34 * des);
   surya.rig.apply();
+  sunEmblem.visible = surya.root.visible; sunEmblem.position.copy(surya.root.position).add(_q.set(0, 4.2, -1.4)); sunEmblem.scale.setScalar(1.1 + 0.05 * Math.sin(t * 2)); sunEmblem.rotation.y = 0;
   rays.visible = surya.root.visible; rays.position.copy(surya.root.position).add(_q.set(0, 3.4, 0)); rays.scale.setScalar(1 + 0.15 * Math.sin(t * 3)); rays.rotation.z = t * 0.12;
   // idol floats down the river toward Samba
   const fl = prog(t, T(8, 0.0), T(8, 0.5));
