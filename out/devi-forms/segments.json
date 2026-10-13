@@ -2,211 +2,216 @@
  {
   "key": "card_intro",
   "start": 0.0,
-  "seconds": 4.0
+  "seconds": 4.99
  },
  {
   "key": "card_sapta",
-  "start": 4.0,
-  "seconds": 4.0
+  "start": 4.99,
+  "seconds": 6.26
  },
  {
   "key": "sapta_brahmani",
-  "start": 8.0,
-  "seconds": 8.0
+  "start": 11.25,
+  "seconds": 7.9
  },
  {
   "key": "sapta_maheshwari",
-  "start": 16.0,
-  "seconds": 8.0
+  "start": 19.15,
+  "seconds": 7.06
  },
  {
   "key": "sapta_kaumari",
-  "start": 24.0,
-  "seconds": 8.0
+  "start": 26.21,
+  "seconds": 7.48
  },
  {
   "key": "sapta_vaishnavi",
-  "start": 32.0,
-  "seconds": 8.0
+  "start": 33.69,
+  "seconds": 6.84
  },
  {
   "key": "sapta_varahi",
-  "start": 40.0,
-  "seconds": 8.0
+  "start": 40.53,
+  "seconds": 6.44
  },
  {
   "key": "sapta_indrani",
-  "start": 48.0,
-  "seconds": 8.0
+  "start": 46.97,
+  "seconds": 7.74
  },
  {
   "key": "sapta_chamunda",
-  "start": 56.0,
-  "seconds": 8.0
+  "start": 54.71,
+  "seconds": 7.0
  },
  {
   "key": "card_dasha",
-  "start": 64.0,
-  "seconds": 4.0
+  "start": 61.71,
+  "seconds": 4.33
  },
  {
   "key": "dasha_kali",
-  "start": 68.0,
-  "seconds": 8.0
+  "start": 66.04,
+  "seconds": 6.0
  },
  {
   "key": "dasha_tara",
-  "start": 76.0,
-  "seconds": 8.0
+  "start": 72.04,
+  "seconds": 4.82
  },
  {
   "key": "dasha_tripurasundari",
-  "start": 84.0,
-  "seconds": 8.0
+  "start": 76.86,
+  "seconds": 7.35
  },
  {
   "key": "dasha_bhuvaneshwari",
-  "start": 92.0,
-  "seconds": 8.0
+  "start": 84.21,
+  "seconds": 4.64
  },
  {
   "key": "dasha_bhairavi",
-  "start": 100.0,
-  "seconds": 8.0
+  "start": 88.85,
+  "seconds": 5.6
  },
  {
   "key": "dasha_chinnamasta",
-  "start": 108.0,
-  "seconds": 8.0
+  "start": 94.45,
+  "seconds": 7.0
  },
  {
   "key": "dasha_dhumavati",
-  "start": 116.0,
-  "seconds": 8.0
+  "start": 101.45,
+  "seconds": 4.95
  },
  {
   "key": "dasha_bagalamukhi",
-  "start": 124.0,
-  "seconds": 8.0
+  "start": 106.4,
+  "seconds": 6.52
  },
  {
   "key": "dasha_matangi",
-  "start": 132.0,
-  "seconds": 8.0
+  "start": 112.92,
+  "seconds": 6.16
  },
  {
   "key": "dasha_kamalatmika",
-  "start": 140.0,
-  "seconds": 8.0
+  "start": 119.08,
+  "seconds": 7.01
  },
  {
   "key": "card_nava",
-  "start": 148.0,
-  "seconds": 4.0
+  "start": 126.09,
+  "seconds": 5.41
  },
  {
   "key": "nava_shailaputri",
-  "start": 152.0,
-  "seconds": 8.0
+  "start": 131.5,
+  "seconds": 4.33
  },
  {
   "key": "nava_brahmacharini",
-  "start": 160.0,
-  "seconds": 8.0
+  "start": 135.83,
+  "seconds": 4.53
  },
  {
   "key": "nava_chandraghanta",
-  "start": 168.0,
-  "seconds": 8.0
+  "start": 140.36,
+  "seconds": 4.83
  },
  {
   "key": "nava_kushmanda",
-  "start": 176.0,
-  "seconds": 8.0
+  "start": 145.19,
+  "seconds": 4.31
  },
  {
   "key": "nava_skandamata",
-  "start": 184.0,
-  "seconds": 8.0
+  "start": 149.5,
+  "seconds": 4.41
  },
  {
   "key": "nava_katyayani",
-  "start": 192.0,
-  "seconds": 8.0
+  "start": 153.91,
+  "seconds": 4.01
  },
  {
   "key": "nava_kalaratri",
-  "start": 200.0,
-  "seconds": 8.0
+  "start": 157.92,
+  "seconds": 4.93
  },
  {
   "key": "nava_mahagauri",
-  "start": 208.0,
-  "seconds": 8.0
+  "start": 162.85,
+  "seconds": 5.17
  },
  {
   "key": "nava_siddhidatri",
-  "start": 216.0,
-  "seconds": 8.0
+  "start": 168.02,
+  "seconds": 5.21
  },
  {
   "key": "sringeri_title",
-  "start": 224.0,
-  "seconds": 4.0
+  "start": 173.23,
+  "seconds": 5.75
  },
  {
   "key": "sringeri_jagatprasutika",
-  "start": 228.0,
-  "seconds": 8.0
+  "start": 178.98,
+  "seconds": 4.76
  },
  {
   "key": "sringeri_hamsavahini_brahmi",
-  "start": 236.0,
-  "seconds": 8.0
+  "start": 183.74,
+  "seconds": 5.09
  },
  {
   "key": "sringeri_mayuravahini_kaumari",
-  "start": 244.0,
-  "seconds": 8.0
+  "start": 188.83,
+  "seconds": 5.46
  },
  {
   "key": "sringeri_rishabhavahini_maheshwari",
-  "start": 252.0,
-  "seconds": 8.0
+  "start": 194.29,
+  "seconds": 5.71
  },
  {
   "key": "sringeri_garudavahini_vaishnavi",
-  "start": 260.0,
-  "seconds": 8.0
+  "start": 200.0,
+  "seconds": 5.48
  },
  {
   "key": "sringeri_veena_sharada",
-  "start": 268.0,
-  "seconds": 8.0
+  "start": 205.48,
+  "seconds": 6.01
  },
  {
   "key": "sringeri_mohini",
-  "start": 276.0,
-  "seconds": 8.0
+  "start": 211.49,
+  "seconds": 4.93
  },
  {
   "key": "sringeri_gajalakshmi",
-  "start": 284.0,
-  "seconds": 8.0
+  "start": 216.42,
+  "seconds": 5.4
  },
  {
   "key": "sringeri_simhavahini",
-  "start": 292.0,
-  "seconds": 8.0
+  "start": 221.82,
+  "seconds": 5.44
  },
  {
   "key": "sringeri_rajarajeshwari",
-  "start": 300.0,
-  "seconds": 8.0
+  "start": 227.26,
+  "seconds": 6.5
  },
  {
   "key": "sringeri_indrani",
-  "start": 308.0,
-  "seconds": 8.0
+  "start": 233.76,
+  "seconds": 6.36
+ },
+ {
+  "key": "card_closing",
+  "start": 240.12,
+  "seconds": 9.004
  }
 ]
