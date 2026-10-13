@@ -7,3 +7,7 @@ out/*/envelope.json
 out/*/video.mp4
 out/*/chk*.png
 out/*/video_share.mp4
+out/devi-forms/panels/
+out/devi-forms/art_only/
+out/devi-forms/cards/
+out/devi-forms/video*.mp4
