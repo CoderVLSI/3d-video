@@ -1,0 +1,212 @@
+[
+ {
+  "key": "card_intro",
+  "start": 0.0,
+  "seconds": 4.0
+ },
+ {
+  "key": "card_sapta",
+  "start": 4.0,
+  "seconds": 4.0
+ },
+ {
+  "key": "sapta_brahmani",
+  "start": 8.0,
+  "seconds": 8.0
+ },
+ {
+  "key": "sapta_maheshwari",
+  "start": 16.0,
+  "seconds": 8.0
+ },
+ {
+  "key": "sapta_kaumari",
+  "start": 24.0,
+  "seconds": 8.0
+ },
+ {
+  "key": "sapta_vaishnavi",
+  "start": 32.0,
+  "seconds": 8.0
+ },
+ {
+  "key": "sapta_varahi",
+  "start": 40.0,
+  "seconds": 8.0
+ },
+ {
+  "key": "sapta_indrani",
+  "start": 48.0,
+  "seconds": 8.0
+ },
+ {
+  "key": "sapta_chamunda",
+  "start": 56.0,
+  "seconds": 8.0
+ },
+ {
+  "key": "card_dasha",
+  "start": 64.0,
+  "seconds": 4.0
+ },
+ {
+  "key": "dasha_kali",
+  "start": 68.0,
+  "seconds": 8.0
+ },
+ {
+  "key": "dasha_tara",
+  "start": 76.0,
+  "seconds": 8.0
+ },
+ {
+  "key": "dasha_tripurasundari",
+  "start": 84.0,
+  "seconds": 8.0
+ },
+ {
+  "key": "dasha_bhuvaneshwari",
+  "start": 92.0,
+  "seconds": 8.0
+ },
+ {
+  "key": "dasha_bhairavi",
+  "start": 100.0,
+  "seconds": 8.0
+ },
+ {
+  "key": "dasha_chinnamasta",
+  "start": 108.0,
+  "seconds": 8.0
+ },
+ {
+  "key": "dasha_dhumavati",
+  "start": 116.0,
+  "seconds": 8.0
+ },
+ {
+  "key": "dasha_bagalamukhi",
+  "start": 124.0,
+  "seconds": 8.0
+ },
+ {
+  "key": "dasha_matangi",
+  "start": 132.0,
+  "seconds": 8.0
+ },
+ {
+  "key": "dasha_kamalatmika",
+  "start": 140.0,
+  "seconds": 8.0
+ },
+ {
+  "key": "card_nava",
+  "start": 148.0,
+  "seconds": 4.0
+ },
+ {
+  "key": "nava_shailaputri",
+  "start": 152.0,
+  "seconds": 8.0
+ },
+ {
+  "key": "nava_brahmacharini",
+  "start": 160.0,
+  "seconds": 8.0
+ },
+ {
+  "key": "nava_chandraghanta",
+  "start": 168.0,
+  "seconds": 8.0
+ },
+ {
+  "key": "nava_kushmanda",
+  "start": 176.0,
+  "seconds": 8.0
+ },
+ {
+  "key": "nava_skandamata",
+  "start": 184.0,
+  "seconds": 8.0
+ },
+ {
+  "key": "nava_katyayani",
+  "start": 192.0,
+  "seconds": 8.0
+ },
+ {
+  "key": "nava_kalaratri",
+  "start": 200.0,
+  "seconds": 8.0
+ },
+ {
+  "key": "nava_mahagauri",
+  "start": 208.0,
+  "seconds": 8.0
+ },
+ {
+  "key": "nava_siddhidatri",
+  "start": 216.0,
+  "seconds": 8.0
+ },
+ {
+  "key": "sringeri_title",
+  "start": 224.0,
+  "seconds": 4.0
+ },
+ {
+  "key": "sringeri_jagatprasutika",
+  "start": 228.0,
+  "seconds": 8.0
+ },
+ {
+  "key": "sringeri_hamsavahini_brahmi",
+  "start": 236.0,
+  "seconds": 8.0
+ },
+ {
+  "key": "sringeri_mayuravahini_kaumari",
+  "start": 244.0,
+  "seconds": 8.0
+ },
+ {
+  "key": "sringeri_rishabhavahini_maheshwari",
+  "start": 252.0,
+  "seconds": 8.0
+ },
+ {
+  "key": "sringeri_garudavahini_vaishnavi",
+  "start": 260.0,
+  "seconds": 8.0
+ },
+ {
+  "key": "sringeri_veena_sharada",
+  "start": 268.0,
+  "seconds": 8.0
+ },
+ {
+  "key": "sringeri_mohini",
+  "start": 276.0,
+  "seconds": 8.0
+ },
+ {
+  "key": "sringeri_gajalakshmi",
+  "start": 284.0,
+  "seconds": 8.0
+ },
+ {
+  "key": "sringeri_simhavahini",
+  "start": 292.0,
+  "seconds": 8.0
+ },
+ {
+  "key": "sringeri_rajarajeshwari",
+  "start": 300.0,
+  "seconds": 8.0
+ },
+ {
+  "key": "sringeri_indrani",
+  "start": 308.0,
+  "seconds": 8.0
+ }
+]

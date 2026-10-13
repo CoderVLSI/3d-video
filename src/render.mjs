@@ -19,11 +19,13 @@ const total = timeline.duration + TAIL;
 const argv = process.argv;
 const arg = (k) => (argv.includes(k) ? argv[argv.indexOf(k) + 1] : null);
 const WORKERS = Number(arg('--workers') || 1), SLICE = arg('--slice'); // --slice i/n: this process renders frames i, i+n, i+2n... to disk
+const SILENT = argv.includes('--silent') || !existsSync(`${OUT}/narration.mp3`); // no narration yet: render a silent video (envelope = 0)
 const FRAMES = `${OUT}/frames`;
 const NFRAMES = Math.ceil(total * FPS);
 
 // Amplitude envelope of the narration (RMS per frame, normalised) so the 3D scene can react to the voice.
 function envelope() {
+  if (SILENT) return new Array(Math.ceil(total * ENV_FPS) + 2).fill(0);
   const pcm = execFileSync('ffmpeg', ['-v', 'error', '-i', `${OUT}/narration.mp3`, '-ac', '1', '-ar', '8000', '-f', 's16le', '-'], { maxBuffer: 1 << 28 });
   const s = new Int16Array(pcm.buffer.slice(pcm.byteOffset, pcm.byteOffset + (pcm.length & ~1))), raw = [];
   for (let f = 0; ; f++) { // 8000 / ENV_FPS is fractional, so derive integer sample bounds per frame
@@ -63,8 +65,9 @@ function audioArgs() {
   ].join(';');
   return { inputs, graph, f };
 }
-const encodeArgs = (f) => ['-map', '0:v', '-map', '[aout]', '-c:v', 'libx264', '-preset', 'medium', '-crf', '18', '-pix_fmt', 'yuv420p',
-  '-c:a', 'aac', '-b:a', '192k', '-t', f, '-movflags', '+faststart', `${OUT}/video.mp4`];
+const encodeArgs = (f) => ['-map', '0:v', ...(SILENT ? [] : ['-map', '[aout]']), '-c:v', 'libx264', '-preset', 'medium', '-crf', '18', '-pix_fmt', 'yuv420p',
+  ...(SILENT ? [] : ['-c:a', 'aac', '-b:a', '192k']), '-t', f, '-movflags', '+faststart', `${OUT}/video.mp4`];
+const muxArgs = () => { const { inputs, graph, f } = SILENT ? { inputs: [], graph: null, f: total.toFixed(2) } : audioArgs(); return ['-y', '-v', 'error', '-framerate', String(FPS), '-i', `${FRAMES}/%05d.jpg`, ...inputs, ...(graph ? ['-filter_complex', graph] : []), ...encodeArgs(f)]; };
 
 // Parallel mode: the supervisor starts one worker process per slice (each its own browser), then muxes the frames on disk.
 if (WORKERS > 1 && !SLICE && !argv.includes('--stills')) {
@@ -77,8 +80,7 @@ if (WORKERS > 1 && !SLICE && !argv.includes('--stills')) {
   if (codes.some((c) => c !== 0)) throw new Error(`worker failed: ${codes}`);
   const got = readdirSync(FRAMES).length;
   if (got !== NFRAMES) throw new Error(`expected ${NFRAMES} frames, found ${got}`);
-  const { inputs, graph, f } = audioArgs();
-  const ff = spawn('ffmpeg', ['-y', '-v', 'error', '-framerate', String(FPS), '-i', `${FRAMES}/%05d.jpg`, ...inputs, '-filter_complex', graph, ...encodeArgs(f)], { stdio: 'inherit' });
+  const ff = spawn('ffmpeg', muxArgs(), { stdio: 'inherit' });
   const code = await new Promise((r) => ff.on('close', r));
   console.log(`rendered ${NFRAMES} frames with ${WORKERS} workers in ${((Date.now() - t0) / 1000).toFixed(0)}s, ffmpeg exit ${code}`);
   rmSync(FRAMES, { recursive: true, force: true }); server.close(); process.exit(code);
@@ -131,8 +133,7 @@ if (stillsArg > -1) {
     renameSync(`${file(i)}.tmp`, file(i)); done++;
     if (done % 30 === 1) console.log(`frame ${i}/${NFRAMES}  (${done} new, ${((Date.now() - t0) / 1000).toFixed(0)}s)`);
   }
-  const { inputs, graph, f } = audioArgs();
-  const ff = spawn('ffmpeg', ['-y', '-v', 'error', '-framerate', String(FPS), '-i', `${FRAMES}/%05d.jpg`, ...inputs, '-filter_complex', graph, ...encodeArgs(f)], { stdio: 'inherit' });
+  const ff = spawn('ffmpeg', muxArgs(), { stdio: 'inherit' });
   const code = await new Promise((r) => ff.on('close', r));
   console.log('ffmpeg exit', code);
 }
