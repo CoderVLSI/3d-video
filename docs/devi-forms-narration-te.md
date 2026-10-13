@@ -1,4 +1,4 @@
-# Devi forms video: Telugu narration script (42 sentences, one per picture)
+# Devi forms video: Telugu narration script (44 sentences; 42 pictures plus a closing card that carries the last two)
 
 ## How to make the voice (ElevenLabs website)
 - Voice: **sudha** (not "Sudha nagalakshmi")
@@ -6,7 +6,7 @@
 - Paste the block below exactly as it is, one sentence per line, then download one MP3 (or 4 MP3s, one per section).
 - Keep exactly one full stop at the end of every line and no others inside a line; the mixing tool finds the sentence boundaries from the pauses.
 
-## Paste block (42 lines)
+## Paste block (44 lines)
 ```
 ఒకే పరాశక్తి, ఎన్నో నామాలతో, ఎన్నో రూపాలతో కొలువై ఉంది.
 సప్త మాతృకలు, ఏడుగురు మాతృదేవతలు, ఒక్కొక్కరూ ఒక్కో ప్రధాన దేవుని శక్తి.
@@ -50,6 +50,8 @@
 సింహవాహిని అలంకారం, ప్రతికూలతను నాశనం చేసి, ధైర్యాన్ని ఇస్తుంది.
 రాజరాజేశ్వరి అలంకారం, సమస్త విశ్వానికీ అధిపతి, కోరిన వరాలన్నీ ఇచ్చే తల్లి.
 ఇంద్రాణి అలంకారం, రాజసాన్నీ ధర్మబద్ధమైన నాయకత్వాన్నీ అనుగ్రహిస్తుంది.
+ఎన్ని రూపాలున్నా, అమ్మ ఒక్కటే, ఒకే పరమ తత్త్వం.
+శ్రీ మాత్రే నమః.
 ```
 
 ## Which sentence goes with which picture
@@ -63,6 +65,7 @@
 | 21 | Navadurga title card |
 | 22-30 | Shailaputri ... Siddhidatri |
 | 31 | Sringeri Sharadamba alankaras title card |
+| 43-44 | Closing card: "Sri Matre Namaha" (both lines) |
 | 32-42 | Jagatprasutika, Hamsavahini Brahmi, Mayuravahini Kaumari, Rishabhavahini Maheshwari, Garudavahini Vaishnavi, Veena Sharada, Mohini, Gajalakshmi, Simhavahini, Rajarajeshwari, Indrani |
 
-42 lines = 42 pictures (see `out/devi-forms/segments.json`), so each picture can be timed to its own sentence.
+Lines 1-42 = the 42 pictures (see `out/devi-forms/segments.json`); lines 43-44 are shown over the closing card.

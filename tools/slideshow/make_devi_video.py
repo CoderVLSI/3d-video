@@ -43,6 +43,7 @@ segs += [('card_dasha', f'{CARDS}/card_dasha.png', 4.0)] + [(f'dasha_{n.lower()}
 segs += [('card_nava', f'{CARDS}/card_nava.png', 4.0)] + [(f'nava_{n.lower()}', nava[i], 8.0) for i, n in enumerate(NAMES['nava'])]
 segs += [('sringeri_title', sring[11], 4.0)] + [(f'sringeri_{NAMES["sringeri"][i].lower().replace(" ", "_")}', sring[i], 8.0) for i in range(11)]
 
+segs += [('card_closing', f'{CARDS}/card_closing.png', 8.0)]  # closing lines 43-44 + "Sri Matre Namaha"
 items = []
 for k, src, d in segs:
     if isinstance(src, str): im = Image.open(src).convert('RGB')
