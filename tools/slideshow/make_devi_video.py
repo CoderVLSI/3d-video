@@ -67,8 +67,14 @@ for k, f, asp, d in items: starts.append({'key': k, 'start': round(acc, 2), 'sec
 json.dump(starts, open(f'{OUT}/segments.json', 'w'), indent=1)
 cmd = ['ffmpeg', '-y', '-v', 'error'] + sum([['-i', v] for v in vids], [])
 g, prev, acc = [], '0:v', 0.0
+CYCLE = ['dissolve', 'fadewhite', 'smoothleft', 'circleopen', 'smoothright', 'fade', 'radial']  # picture -> picture
+def transition(i):  # i = index of the segment being entered
+    k = items[i][0]
+    if k.startswith('card') or k == 'sringeri_title': return 'fadewhite'        # soft golden flash into a title card
+    if items[i - 1][0].startswith('card') or items[i - 1][0] == 'sringeri_title': return 'circleopen'  # the first picture of a section opens like a halo
+    return CYCLE[i % len(CYCLE)]
 for i in range(1, len(vids)):
-    acc += items[i - 1][3]; g.append(f"[{prev}][{i}:v]xfade=transition=fade:duration={XF}:offset={acc:.3f}[x{i}]"); prev = f'x{i}'
+    acc += items[i - 1][3]; g.append(f"[{prev}][{i}:v]xfade=transition={transition(i)}:duration={XF}:offset={acc:.3f}[x{i}]"); prev = f'x{i}'
 g.append(f"[{prev}]fade=t=in:st=0:d=0.8,fade=t=out:st={tot - 0.8:.3f}:d=0.8,format=yuv420p[v]")
 subprocess.run(cmd + ['-filter_complex', ';'.join(g), '-map', '[v]', '-c:v', 'libx264', '-crf', '19', '-preset', 'medium', '-movflags', '+faststart', f'{OUT}/video.mp4'], check=True)
 print('done', f'{OUT}/video.mp4', round(tot, 1), 's', len(items), 'segments')
